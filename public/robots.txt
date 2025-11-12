@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /employer/dashboard
+Disallow: /applicant/dashboard
+
+Sitemap: https://applynhire.com/sitemap.xml

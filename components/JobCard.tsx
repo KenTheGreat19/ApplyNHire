@@ -1,0 +1,86 @@
+import Link from "next/link"
+import { MapPin, Briefcase, Clock, DollarSign } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { formatDistanceToNow } from "date-fns"
+import { formatSalary, truncateText } from "@/lib/utils"
+
+interface JobCardProps {
+  job: {
+    id: string
+    title: string
+    company: string
+    location: string
+    type: string
+    description: string
+    salaryMin?: number | null
+    salaryMax?: number | null
+    createdAt: Date
+  }
+}
+
+export function JobCard({ job }: JobCardProps) {
+  const employmentTypeLabels: Record<string, string> = {
+    full_time: "Full Time",
+    part_time: "Part Time",
+    contract: "Contract",
+    internship: "Internship",
+  }
+
+  const isRemote = job.location.toLowerCase().includes("remote")
+  const timeAgo = formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
+  const salary = formatSalary(job.salaryMin, job.salaryMax)
+
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-3">
+        <Link 
+          href={`/jobs/${job.id}`}
+          className="text-xl font-bold text-gray-900 dark:text-white hover:text-[#0A66C2] dark:hover:text-[#0A66C2] transition-colors"
+        >
+          {job.title}
+        </Link>
+        <p className="text-gray-600 dark:text-gray-400 font-medium">
+          {job.company}
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={isRemote ? "success" : "secondary"} className="flex items-center gap-1">
+            <MapPin className="h-3 w-3" />
+            {job.location}
+          </Badge>
+
+          <Badge variant="default" className="flex items-center gap-1">
+            <Briefcase className="h-3 w-3" />
+            {employmentTypeLabels[job.type] || job.type}
+          </Badge>
+
+          {salary && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              {salary}
+            </Badge>
+          )}
+        </div>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {truncateText(job.description, 120)}
+        </p>
+
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
+          <Clock className="h-3 w-3" />
+          <span>Posted {timeAgo}</span>
+        </div>
+      </CardContent>
+
+      <CardFooter>
+        <Button asChild className="w-full bg-[#0A66C2] hover:bg-[#0A66C2]/90">
+          <Link href={`/jobs/${job.id}`}>View Details</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
