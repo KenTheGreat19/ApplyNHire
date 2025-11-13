@@ -8,11 +8,15 @@ const jobSchema = z.object({
   title: z.string().min(3).optional(),
   company: z.string().min(2).optional(),
   location: z.string().min(2).optional(),
+  locationLat: z.number().optional(),
+  locationLng: z.number().optional(),
   type: z.enum(["full_time", "part_time", "contract", "internship"]).optional(),
   description: z.string().min(50).optional(),
-  applyUrl: z.string().url().optional(),
+  applyUrl: z.string().optional(),
+  acceptApplicationsHere: z.boolean().optional(),
   salaryMin: z.number().optional(),
   salaryMax: z.number().optional(),
+  salaryCurrency: z.string().optional(),
 })
 
 // GET - Get single job

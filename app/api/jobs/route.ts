@@ -8,11 +8,15 @@ const jobSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   company: z.string().min(2, "Company name required"),
   location: z.string().min(2, "Location required"),
+  locationLat: z.number().optional(),
+  locationLng: z.number().optional(),
   type: z.enum(["full_time", "part_time", "contract", "internship"]),
   description: z.string().min(50, "Description must be at least 50 characters"),
-  applyUrl: z.string().url("Must be a valid URL"),
+  applyUrl: z.string().optional(),
+  acceptApplicationsHere: z.boolean().default(false),
   salaryMin: z.number().optional(),
   salaryMax: z.number().optional(),
+  salaryCurrency: z.string().default("USD"),
   careerLink: z.string().url().optional().or(z.literal("")),
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().optional().or(z.literal("")),
@@ -20,6 +24,14 @@ const jobSchema = z.object({
   degreeType: z.enum(["BACHELORS", "MASTERS", "ASSOCIATES", "HIGH_SCHOOL", "NONE"]).optional(),
   experienceRequired: z.enum(["ENTRY_LEVEL", "MID_LEVEL", "SENIOR", "MANAGER"]).optional(),
   yearsOfExperience: z.number().optional(),
+}).refine((data) => {
+  if (data.acceptApplicationsHere) {
+    return true
+  }
+  return data.applyUrl && data.applyUrl.length > 0
+}, {
+  message: "Either enable 'Accept Applications Here' or provide an Apply URL",
+  path: ["applyUrl"],
 })
 
 // GET - Get all jobs for logged-in employer

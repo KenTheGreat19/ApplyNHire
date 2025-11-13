@@ -44,9 +44,17 @@ export async function JobMapSection({ searchParams }: JobMapSectionProps) {
       title: true,
       company: true,
       location: true,
+      locationLat: true,
+      locationLng: true,
       type: true,
       salaryMin: true,
       salaryMax: true,
+      salaryCurrency: true,
+      employer: {
+        select: {
+          employerType: true,
+        },
+      },
     },
     take: 100,
     orderBy: {
@@ -54,5 +62,20 @@ export async function JobMapSection({ searchParams }: JobMapSectionProps) {
     },
   })
 
-  return <JobMapClient jobs={jobs} />
+  // Map jobs to include employerType at the top level for easier access
+  const mappedJobs = jobs.map(job => ({
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    location: job.location,
+    lat: (job as any).locationLat,
+    lng: (job as any).locationLng,
+    type: job.type,
+    salaryMin: job.salaryMin,
+    salaryMax: job.salaryMax,
+    salaryCurrency: (job as any).salaryCurrency,
+    employerType: job.employer?.employerType || null,
+  }))
+
+  return <JobMapClient jobs={mappedJobs} />
 }

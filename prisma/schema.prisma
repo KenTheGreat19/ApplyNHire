@@ -78,13 +78,17 @@ model Job {
   title               String
   company             String
   location            String
+  locationLat         Float?
+  locationLng         Float?
   type                String
   description         String
   applyUrl            String
+  acceptApplicationsHere Boolean @default(false)
   status              String   @default("pending")
   
   salaryMin           Int?
   salaryMax           Int?
+  salaryCurrency      String   @default("USD")
   currency            String   @default("USD")
   
   degreeRequired      Boolean  @default(false)
@@ -377,4 +381,122 @@ model JobLike {
   @@unique([jobId, userId])
   @@index([jobId])
   @@index([userId])
+}
+
+model JobTag {
+  id                  String   @id @default(cuid())
+  name                String
+  color               String   @default("#3b82f6")
+  description         String?
+  createdBy           String
+  jobCount            Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  jobTagAssignments   JobTagAssignment[]
+
+  @@index([createdBy])
+  @@index([name])
+  @@index([createdAt])
+}
+
+model JobTagAssignment {
+  id                  String   @id @default(cuid())
+  jobId               String
+  tagId               String
+  assignedAt          DateTime @default(now())
+
+  tag                 JobTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, tagId])
+  @@index([jobId])
+  @@index([tagId])
+}
+
+model Interview {
+  id                  String   @id @default(cuid())
+  jobId               String
+  candidateId         String
+  candidateName       String
+  candidateEmail      String
+  scheduledAt         DateTime
+  duration            Int      @default(60)  // minutes
+  status              String   @default("scheduled")  // "scheduled", "completed", "cancelled", "no_show"
+  interviewType       String   @default("phone")  // "phone", "video", "in_person"
+  notes               String?
+  meetingLink         String?
+  location            String?
+  createdBy           String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([candidateId])
+  @@index([createdBy])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model InterviewAvailability {
+  id                  String   @id @default(cuid())
+  userId              String
+  dayOfWeek           Int      // 0 = Sunday, 1 = Monday, etc.
+  startTime           String   // "09:00"
+  endTime             String   // "17:00"
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([dayOfWeek])
+}
+
+model InterviewException {
+  id                  String   @id @default(cuid())
+  userId              String
+  date                DateTime
+  reason              String?
+  isAvailable         Boolean  @default(false)  // false = blocked, true = special availability
+  startTime           String?
+  endTime             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([date])
+}
+
+model TeamMember {
+  id                  String   @id @default(cuid())
+  employerId          String
+  email               String
+  name                String?
+  role                String   // "admin", "recruiter", "hiring_manager", "viewer"
+  status              String   @default("pending")  // "pending", "active", "inactive"
+  invitedAt           DateTime @default(now())
+  acceptedAt          DateTime?
+  permissions         String?  // JSON string of permissions
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([employerId, email])
+  @@index([employerId])
+  @@index([email])
+  @@index([status])
+}
+
+model CandidateSearch {
+  id                  String   @id @default(cuid())
+  userId              String
+  searchName          String
+  jobTitle            String?
+  location            String?
+  country             String?
+  experienceLevel     String?
+  skills              String?  // JSON array
+  savedAt             DateTime @default(now())
+  lastUsed            DateTime @default(now())
+
+  @@index([userId])
+  @@index([lastUsed])
 }

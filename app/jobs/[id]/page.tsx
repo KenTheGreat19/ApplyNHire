@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { PublicComments } from "@/components/PublicComments"
 import { EmployerPublicReviews } from "@/components/EmployerPublicReviews"
-import { JobLocationMap } from "@/components/JobLocationMap"
+import { GoogleJobLocationMap } from "@/components/GoogleJobLocationMap"
 import { formatDistanceToNow } from "date-fns"
 import { formatSalary } from "@/lib/utils"
 
@@ -62,7 +62,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   const isRemote = job.location.toLowerCase().includes("remote")
   const timeAgo = formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
-  const salary = formatSalary(job.salaryMin, job.salaryMax)
+  const salary = formatSalary(job.salaryMin, job.salaryMax, (job as any).salaryCurrency || "USD")
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
@@ -137,8 +137,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             {/* Job Location Map */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Job Location</h3>
-              <JobLocationMap 
+              <GoogleJobLocationMap 
                 location={job.location}
+                locationLat={(job as any).locationLat}
+                locationLng={(job as any).locationLng}
                 jobTitle={job.title}
                 company={job.company}
               />
@@ -146,7 +148,12 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             {/* Apply Button Card */}
             <Card>
               <CardContent className="pt-6">
-                <ApplyButton applyUrl={job.applyUrl} jobTitle={job.title} />
+                <ApplyButton 
+                  jobId={job.id}
+                  applyUrl={job.applyUrl} 
+                  jobTitle={job.title}
+                  acceptApplicationsHere={(job as any).acceptApplicationsHere || false}
+                />
               </CardContent>
             </Card>
 

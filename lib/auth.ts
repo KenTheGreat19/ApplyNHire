@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
+import AzureADProvider from "next-auth/providers/azure-ad"
 import bcrypt from "bcryptjs"
 import prisma from "@/lib/prisma"
 
@@ -12,6 +13,29 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID || "",
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || "",
+      tenantId: process.env.AZURE_AD_TENANT_ID || "common",
+    }),
+    // Yahoo OAuth provider configuration
+    {
+      id: "yahoo",
+      name: "Yahoo",
+      type: "oauth" as const,
+      wellKnown: "https://api.login.yahoo.com/.well-known/openid-configuration",
+      authorization: { params: { scope: "openid email profile" } },
+      clientId: process.env.YAHOO_CLIENT_ID || "",
+      clientSecret: process.env.YAHOO_CLIENT_SECRET || "",
+      profile(profile: any) {
+        return {
+          id: profile.sub,
+          name: profile.name || profile.nickname,
+          email: profile.email,
+          image: profile.picture,
+        }
+      },
+    },
     CredentialsProvider({
       name: "credentials",
       credentials: {

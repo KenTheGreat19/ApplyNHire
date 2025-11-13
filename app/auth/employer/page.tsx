@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Briefcase } from "lucide-react"
+import { Briefcase, Loader2 } from "lucide-react"
 
 const employerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -39,6 +39,7 @@ export default function EmployerAuthPage() {
   const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null)
 
   const {
     register: registerSignup,
@@ -113,6 +114,18 @@ export default function EmployerAuthPage() {
     }
   }
 
+  const handleOAuthSignIn = async (provider: string) => {
+    setOauthLoading(provider)
+    try {
+      await signIn(provider, {
+        callbackUrl: "/employer/dashboard",
+      })
+    } catch (error) {
+      toast.error(`Failed to sign in with ${provider}`)
+      setOauthLoading(null)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 py-12 px-4">
       <Card className="w-full max-w-md">
@@ -132,41 +145,119 @@ export default function EmployerAuthPage() {
 
         <CardContent>
           {isLogin ? (
-            <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...registerLogin("email")}
-                  disabled={isLoading}
-                />
-                {loginErrors.email && (
-                  <p className="text-sm text-red-500 mt-1">{loginErrors.email.message}</p>
-                )}
+            <div className="space-y-4">
+              {/* OAuth Buttons */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleOAuthSignIn("google")}
+                  disabled={oauthLoading !== null}
+                >
+                  {oauthLoading === "google" ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Continue with Google
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleOAuthSignIn("yahoo")}
+                  disabled={oauthLoading !== null}
+                >
+                  {oauthLoading === "yahoo" ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="#6001D2">
+                        <path d="M12.23 2C6.18 2 1.25 6.93 1.25 13c0 6.05 4.93 11 10.98 11s10.98-4.95 10.98-11c0-6.07-4.93-11-10.98-11zm3.14 15.42h-2.74l-.74-2.48-3.11-7.07h2.68l1.97 5.02 1.92-5.02h2.62l-3.86 9.29z"/>
+                      </svg>
+                      Continue with Yahoo
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleOAuthSignIn("azure-ad")}
+                  disabled={oauthLoading !== null}
+                >
+                  {oauthLoading === "azure-ad" ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 mr-2" viewBox="0 0 23 23">
+                        <path fill="#f25022" d="M0 0h11v11H0z"/>
+                        <path fill="#00a4ef" d="M12 0h11v11H12z"/>
+                        <path fill="#7fba00" d="M0 12h11v11H0z"/>
+                        <path fill="#ffb900" d="M12 12h11v11H12z"/>
+                      </svg>
+                      Continue with Outlook
+                    </>
+                  )}
+                </Button>
               </div>
 
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...registerLogin("password")}
-                  disabled={isLoading}
-                />
-                {loginErrors.password && (
-                  <p className="text-sm text-red-500 mt-1">{loginErrors.password.message}</p>
-                )}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-[#0A66C2] hover:bg-[#0A66C2]/90"
-                disabled={isLoading}
-              >
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-            </form>
+              {/* Email/Password Form */}
+              <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...registerLogin("email")}
+                    disabled={isLoading}
+                  />
+                  {loginErrors.email && (
+                    <p className="text-sm text-red-500 mt-1">{loginErrors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...registerLogin("password")}
+                    disabled={isLoading}
+                  />
+                  {loginErrors.password && (
+                    <p className="text-sm text-red-500 mt-1">{loginErrors.password.message}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-[#0A66C2] hover:bg-[#0A66C2]/90"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Logging in..." : "Sign In"}
+                </Button>
+              </form>
+            </div>
           ) : (
             <form onSubmit={handleSignupSubmit(onSignup)} className="space-y-4">
               <div>
@@ -271,6 +362,22 @@ export default function EmployerAuthPage() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4">
+          <div className="text-center text-xs text-muted-foreground px-4">
+            By clicking any of the &apos;Continue&apos; options above, you understand and agree to ApplyNHire&apos;s{" "}
+            <Link href="/terms" className="text-[#0A66C2] hover:underline">
+              Terms
+            </Link>
+            . You also acknowledge our{" "}
+            <Link href="/cookies" className="text-[#0A66C2] hover:underline">
+              Cookie
+            </Link>
+            {" "}and{" "}
+            <Link href="/privacy" className="text-[#0A66C2] hover:underline">
+              Privacy
+            </Link>
+            {" "}policies. You will receive marketing messages from ApplyNHire and may opt out at any time by following the unsubscribe link in our messages, or as detailed in our terms.
+          </div>
+
           <div className="text-center text-sm">
             {isLogin ? (
               <>

@@ -2,11 +2,21 @@
 
 import { useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { MapPin, Navigation, Loader2 } from "lucide-react"
+import { Navigation, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-// Dynamically import map components to avoid SSR issues
+// Import useMap hook for cluster group
+import "leaflet/dist/leaflet.css"
+
+// Dynamically import react-leaflet components
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false }
@@ -24,6 +34,85 @@ const Popup = dynamic(
   { ssr: false }
 )
 
+// Custom MarkerClusterGroup wrapper component
+const MarkerClusterGroup = dynamic(
+  () => import("react-leaflet").then(async (mod) => {
+    const L = await import("leaflet")
+    await import("leaflet.markercluster")
+    
+    return ({ children }: any) => {
+      const map = (mod as any).useMap()
+      const [clusterGroup] = useState(() => {
+        return (L.default as any).markerClusterGroup({
+          iconCreateFunction: (cluster: any) => {
+            const childCount = cluster.getChildCount()
+            const childMarkers = cluster.getAllChildMarkers()
+            
+            // Determine dominant employer type
+            const typeCounts: Record<string, number> = {}
+            childMarkers.forEach((marker: any) => {
+              const type = marker.options.employerType || 'COMPANY'
+              typeCounts[type] = (typeCounts[type] || 0) + 1
+            })
+            
+            const dominantType = Object.keys(typeCounts).reduce((a, b) => 
+              typeCounts[a] > typeCounts[b] ? a : b
+            , 'COMPANY')
+            
+            let clusterClass = 'marker-cluster-company'
+            if (dominantType === 'AGENCY') clusterClass = 'marker-cluster-agency'
+            if (dominantType === 'CLIENT') clusterClass = 'marker-cluster-client'
+            
+            return L.default.divIcon({
+              html: `<div><span>${childCount}</span></div>`,
+              className: `marker-cluster ${clusterClass}`,
+              iconSize: L.default.point(40, 40)
+            })
+          }
+        })
+      })
+
+      useEffect(() => {
+        if (map && clusterGroup) {
+          map.addLayer(clusterGroup)
+          return () => {
+            map.removeLayer(clusterGroup)
+          }
+        }
+        return undefined
+      }, [map, clusterGroup])
+
+      useEffect(() => {
+        if (clusterGroup) {
+          clusterGroup.clearLayers()
+          if (children) {
+            const markers = Array.isArray(children) ? children : [children]
+            markers.forEach((child: any) => {
+              if (child?.props?.position) {
+                const marker = L.default.marker(child.props.position, {
+                  icon: child.props.icon
+                }) as any
+                marker.options.employerType = child.props.employerType
+                if (child.props.children?.props?.children) {
+                  // Create a container div for the popup content
+                  const popupDiv = document.createElement('div')
+                  popupDiv.className = 'min-w-[200px]'
+                  // We'll set innerHTML after the popup is created
+                  marker.bindPopup(popupDiv)
+                }
+                clusterGroup.addLayer(marker)
+              }
+            })
+          }
+        }
+      }, [children, clusterGroup])
+
+      return null
+    }
+  }),
+  { ssr: false }
+)
+
 interface JobLocation {
   id: string
   title: string
@@ -35,6 +124,7 @@ interface JobLocation {
   type: string
   salaryMin?: number | null
   salaryMax?: number | null
+  employerType?: string | null
 }
 
 interface JobMapProps {
@@ -46,6 +136,7 @@ interface JobMapProps {
     type: string
     salaryMin?: number | null
     salaryMax?: number | null
+    employerType?: string | null
   }>
   onJobClick?: (jobId: string) => void
 }
@@ -85,27 +176,131 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c
 }
 
+// Extract city from location string
+function extractCity(location: string): string {
+  // Handle formats like "New York, NY", "London, UK", "Remote - California"
+  const cleaned = location.replace(/^Remote\s*-\s*/i, '').trim()
+  const parts = cleaned.split(',')
+  return parts[0].trim()
+}
+
+// Component to handle map updates - can't use useMap directly with dynamic import
+// So we'll control the map through state and MapContainer props instead
+
 export function JobMap({ jobs, onJobClick }: JobMapProps) {
   const [jobLocations, setJobLocations] = useState<JobLocation[]>([])
+  const [filteredLocations, setFilteredLocations] = useState<JobLocation[]>([])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number]>([20, 0]) // World center
   const [mapZoom, setMapZoom] = useState(2)
   const [isLoading, setIsLoading] = useState(true)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [selectedCity, setSelectedCity] = useState<string>("all")
+  const [cities, setCities] = useState<Array<{ name: string; count: number; distance?: number }>>([])
+  const [geolocating, setGeolocating] = useState(false)
   const [leafletLoaded, setLeafletLoaded] = useState(false)
 
-  // Load Leaflet CSS
+  // Load Leaflet CSS and create custom icons
   useEffect(() => {
     if (typeof window !== "undefined") {
       require("leaflet/dist/leaflet.css")
-      // Fix for default marker icons in Next.js
-      import("leaflet").then((L) => {
-        delete (L.Icon.Default.prototype as any)._getIconUrl
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-          iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      require("leaflet.markercluster/dist/MarkerCluster.css")
+      require("leaflet.markercluster/dist/MarkerCluster.Default.css")
+      
+      // Add custom styles
+      if (!document.getElementById('map-custom-styles')) {
+        const style = document.createElement('style')
+        style.id = 'map-custom-styles'
+        style.innerHTML = `
+          .leaflet-control-attribution { display: none !important; }
+          .leaflet-container { z-index: 0 !important; }
+          [data-radix-popper-content-wrapper] { z-index: 100 !important; }
+          .custom-user-marker, .custom-job-marker { background: transparent; border: none; }
+          .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+            background-color: rgba(110, 204, 57, 0.6);
+          }
+          .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+            background-color: rgba(110, 204, 57, 0.8);
+            color: white;
+            font-weight: bold;
+          }
+          .marker-cluster-company { background-color: rgba(37, 99, 235, 0.6) !important; }
+          .marker-cluster-company div { background-color: rgba(37, 99, 235, 0.8) !important; }
+          .marker-cluster-agency { background-color: rgba(34, 197, 94, 0.6) !important; }
+          .marker-cluster-agency div { background-color: rgba(34, 197, 94, 0.8) !important; }
+          .marker-cluster-client { background-color: rgba(234, 179, 8, 0.6) !important; }
+          .marker-cluster-client div { background-color: rgba(234, 179, 8, 0.8) !important; }
+        `
+        document.head.appendChild(style)
+      }
+      
+      // Load Leaflet and create custom icons
+      import("leaflet").then(async (L) => {
+        await import("leaflet.markercluster")
+        
+        // Custom icon for user location (red inverted-teardrop pin with person silhouette)
+        const userIconHtml = `
+          <svg width="48" height="60" viewBox="0 0 48 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Inverted teardrop shape -->
+            <path d="M24 0C15.163 0 8 7.163 8 16c0 12 16 44 16 44s16-32 16-44c0-8.837-7.163-16-16-16z" 
+                  fill="#dc2626" 
+                  stroke="#991b1b" 
+                  stroke-width="2.5"/>
+            <!-- White circular background for icon -->
+            <circle cx="24" cy="16" r="10" fill="white"/>
+            <!-- Person/Man silhouette -->
+            <circle cx="24" cy="13" r="3" fill="#dc2626"/>
+            <path d="M24 16.5c-3 0-5 1.5-5 4h10c0-2.5-2-4-5-4z" fill="#dc2626"/>
+          </svg>`
+        
+        ;(window as any).userIcon = L.default.divIcon({
+          html: userIconHtml,
+          className: 'custom-user-marker',
+          iconSize: [48, 60],
+          iconAnchor: [24, 60],
+          popupAnchor: [0, -60]
         })
+
+        // Function to create job icon with numbered identifier based on employer type
+        ;(window as any).createJobIcon = (employerType: string, index: number) => {
+          let color = '#2563eb' // Corporate blue for Company
+          let strokeColor = '#1e40af'
+          
+          if (employerType === 'AGENCY') {
+            color = '#22c55e' // Vibrant green for Agency
+            strokeColor = '#16a34a'
+          } else if (employerType === 'CLIENT') {
+            color = '#eab308' // Bright yellow for Client
+            strokeColor = '#ca8a04'
+          }
+          
+          const jobIconHtml = `
+            <svg width="44" height="56" viewBox="0 0 44 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Inverted teardrop location pin shape -->
+              <path d="M22 0C13.716 0 7 6.716 7 15c0 11 15 41 15 41s15-30 15-41c0-8.284-6.716-15-15-15z" 
+                    fill="${color}" 
+                    stroke="${strokeColor}" 
+                    stroke-width="2.5"/>
+              <!-- White circular background for number -->
+              <circle cx="22" cy="15" r="10" fill="white"/>
+              <!-- Numbered identifier (highly legible contrasting text) -->
+              <text x="22" y="19" 
+                    font-family="Arial, sans-serif" 
+                    font-size="11" 
+                    font-weight="bold" 
+                    fill="${color}" 
+                    text-anchor="middle">${index + 1}</text>
+            </svg>`
+          
+          return L.default.divIcon({
+            html: jobIconHtml,
+            className: 'custom-job-marker',
+            iconSize: [44, 56],
+            iconAnchor: [22, 56],
+            popupAnchor: [0, -56]
+          })
+        }
+        
         setLeafletLoaded(true)
       })
     }
@@ -114,6 +309,7 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
   // Get user's location
   const getUserLocation = () => {
     setLocationError(null)
+    setGeolocating(true)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -123,17 +319,25 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
           }
           setUserLocation(userPos)
           setMapCenter([userPos.lat, userPos.lng])
-          setMapZoom(10)
+          setMapZoom(12)
+          setGeolocating(false)
         },
         (error) => {
           console.error("Geolocation error:", error)
           setLocationError("Unable to get your location. Please enable location services.")
+          setGeolocating(false)
         }
       )
     } else {
       setLocationError("Geolocation is not supported by your browser.")
+      setGeolocating(false)
     }
   }
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    getUserLocation()
+  }, [])
 
   // Geocode all job locations
   useEffect(() => {
@@ -143,14 +347,15 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
       setIsLoading(true)
       const locationsMap = new Map<string, { lat: number; lng: number }>()
       const geocoded: JobLocation[] = []
+      const cityCountMap = new Map<string, number>()
 
       for (const job of jobs.slice(0, 50)) { // Limit to 50 jobs to avoid rate limiting
         let coords = locationsMap.get(job.location)
         
         if (!coords) {
-          const geocoded = await geocodeLocation(job.location)
-          if (geocoded) {
-            coords = geocoded
+          const geocodedCoords = await geocodeLocation(job.location)
+          if (geocodedCoords) {
+            coords = geocodedCoords
             locationsMap.set(job.location, coords)
           }
           // Rate limiting: wait 1 second between requests
@@ -175,6 +380,10 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
           }
 
           geocoded.push(jobLoc)
+
+          // Count jobs per city
+          const city = extractCity(job.location)
+          cityCountMap.set(city, (cityCountMap.get(city) || 0) + 1)
         }
       }
 
@@ -184,6 +393,26 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
           geocoded.sort((a, b) => (a.distance || 0) - (b.distance || 0))
         }
         setJobLocations(geocoded)
+
+        // Build cities list with counts
+        const citiesList = Array.from(cityCountMap.entries()).map(([name, count]) => {
+          const cityJobs = geocoded.filter(j => extractCity(j.location) === name)
+          let distance: number | undefined
+          if (userLocation && cityJobs.length > 0) {
+            // Use the closest job in that city
+            distance = Math.min(...cityJobs.map(j => j.distance || Infinity))
+          }
+          return { name, count, distance }
+        })
+
+        // Sort cities by distance if user location available, otherwise by job count
+        if (userLocation) {
+          citiesList.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+        } else {
+          citiesList.sort((a, b) => b.count - a.count)
+        }
+
+        setCities(citiesList)
         setIsLoading(false)
       }
     }
@@ -199,6 +428,24 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
     }
   }, [jobs, userLocation])
 
+  // Filter jobs by selected city
+  useEffect(() => {
+    if (selectedCity === "all") {
+      setFilteredLocations(jobLocations)
+    } else {
+      const filtered = jobLocations.filter(job => extractCity(job.location) === selectedCity)
+      setFilteredLocations(filtered)
+
+      // Update map center
+      if (filtered.length > 0) {
+        const latSum = filtered.reduce((sum, job) => sum + job.lat, 0)
+        const lngSum = filtered.reduce((sum, job) => sum + job.lng, 0)
+        setMapCenter([latSum / filtered.length, lngSum / filtered.length])
+        setMapZoom(11)
+      }
+    }
+  }, [selectedCity, jobLocations])
+
   if (!leafletLoaded) {
     return (
       <Card className="p-8 flex items-center justify-center">
@@ -209,19 +456,66 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex-1">
           <h2 className="text-2xl font-bold">Jobs Near You</h2>
           <p className="text-sm text-muted-foreground">
-            {jobLocations.length > 0
+            {geolocating
+              ? "Detecting your location..."
+              : userLocation
+              ? `Showing ${filteredLocations.length} job${filteredLocations.length !== 1 ? 's' : ''} ${selectedCity !== "all" ? `in ${selectedCity}` : "near you"}`
+              : jobLocations.length > 0
               ? `Showing ${jobLocations.length} job locations on the map`
               : "Loading job locations..."}
           </p>
+          <div className="flex items-center gap-4 mt-2 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span>Company</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span>Agency</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span>Client</span>
+            </div>
+          </div>
         </div>
-        <Button onClick={getUserLocation} variant="outline" size="sm">
-          <Navigation className="h-4 w-4 mr-2" />
-          Use My Location
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto relative z-[100]">
+          {cities.length > 0 && (
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select city" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  All Cities ({jobLocations.length})
+                </SelectItem>
+                {cities.map((city) => (
+                  <SelectItem key={city.name} value={city.name}>
+                    {city.name} ({city.count})
+                    {city.distance && ` - ${city.distance.toFixed(1)}km`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button 
+            onClick={getUserLocation} 
+            variant="outline" 
+            size="sm"
+            disabled={geolocating}
+          >
+            {geolocating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Navigation className="h-4 w-4 mr-2" />
+            )}
+            {geolocating ? "Locating..." : "My Location"}
+          </Button>
+        </div>
       </div>
 
       {locationError && (
@@ -238,74 +532,100 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
           </div>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="h-[500px] relative">
+        <Card className="overflow-hidden relative z-0">
+          <div className="h-[500px] relative z-0">
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
-              style={{ height: "100%", width: "100%" }}
+              style={{ height: "100%", width: "100%", zIndex: 0 }}
               scrollWheelZoom={true}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                maxZoom={20}
+                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+                attribution=""
               />
-
+              
               {/* User location marker */}
               {userLocation && (
-                <Marker position={[userLocation.lat, userLocation.lng]}>
+                <Marker 
+                  position={[userLocation.lat, userLocation.lng]}
+                  icon={(window as any).userIcon}
+                >
                   <Popup>
                     <div className="text-center font-semibold">
-                      <MapPin className="h-4 w-4 inline-block mr-1" />
-                      Your Location
+                      📍 Your Location
                     </div>
                   </Popup>
                 </Marker>
               )}
 
-              {/* Job location markers */}
-              {jobLocations.map((job) => (
-                <Marker key={job.id} position={[job.lat, job.lng]}>
-                  <Popup>
-                    <div className="min-w-[200px]">
-                      <h3 className="font-semibold text-sm mb-1">{job.title}</h3>
-                      <p className="text-xs text-muted-foreground mb-1">{job.company}</p>
-                      <p className="text-xs mb-1">
-                        <MapPin className="h-3 w-3 inline-block mr-1" />
-                        {job.location}
-                      </p>
-                      {job.distance && (
-                        <p className="text-xs text-blue-600 mb-2">
-                          📍 {job.distance.toFixed(1)} km away
+              {/* Job markers with clustering */}
+              <MarkerClusterGroup>
+                {filteredLocations.map((job, index) => {
+                  // Create popup HTML string
+                  const typeColor = job.employerType === 'COMPANY' ? 'bg-blue-500' :
+                                   job.employerType === 'AGENCY' ? 'bg-green-500' : 'bg-yellow-500'
+                  
+                  const popupContent = `
+                    <div style="min-width: 200px; padding: 8px;">
+                      <h3 style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">${job.title}</h3>
+                      <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">${job.company}</p>
+                      <p style="font-size: 0.75rem; margin-bottom: 0.25rem;">📍 ${job.location}</p>
+                      ${job.employerType ? `
+                        <p style="font-size: 0.75rem; margin-bottom: 0.25rem;">
+                          <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 0.75rem;" class="${typeColor}">
+                            ${job.employerType}
+                          </span>
                         </p>
-                      )}
-                      {job.salaryMin && job.salaryMax && (
-                        <p className="text-xs mb-2">
-                          💰 ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}
+                      ` : ''}
+                      ${job.distance ? `
+                        <p style="font-size: 0.75rem; color: #2563eb; margin-bottom: 0.5rem;">
+                          📍 ${job.distance.toFixed(1)} km away
                         </p>
-                      )}
-                      <Button
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => onJobClick?.(job.id)}
+                      ` : ''}
+                      ${job.salaryMin && job.salaryMax ? `
+                        <p style="font-size: 0.75rem; margin-bottom: 0.5rem;">
+                          💰 $${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}
+                        </p>
+                      ` : ''}
+                      <button 
+                        onclick="window.location.href='/jobs/${job.id}'"
+                        style="width: 100%; font-size: 0.75rem; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;"
+                        onmouseover="this.style.background='#1d4ed8'"
+                        onmouseout="this.style.background='#2563eb'"
                       >
                         View Details
-                      </Button>
+                      </button>
                     </div>
-                  </Popup>
-                </Marker>
-              ))}
+                  `
+                  
+                  return (
+                    <Marker 
+                      key={job.id} 
+                      position={[job.lat, job.lng]}
+                      icon={(window as any).createJobIcon?.(job.employerType || 'COMPANY', index)}
+                      {...({ employerType: job.employerType || 'COMPANY', popupContent } as any)}
+                    >
+                      <Popup>{popupContent}</Popup>
+                    </Marker>
+                  )
+                })}
+              </MarkerClusterGroup>
             </MapContainer>
           </div>
         </Card>
       )}
 
       {/* Nearest jobs list */}
-      {jobLocations.length > 0 && userLocation && (
+      {filteredLocations.length > 0 && userLocation && (
         <Card className="p-4">
-          <h3 className="font-semibold mb-3">Nearest Jobs</h3>
+          <h3 className="font-semibold mb-3">
+            {selectedCity === "all" ? "Nearest Jobs" : `Jobs in ${selectedCity}`}
+          </h3>
           <div className="space-y-2">
-            {jobLocations.slice(0, 5).map((job) => (
+            {filteredLocations.slice(0, 5).map((job) => (
               <div
                 key={job.id}
                 className="flex items-center justify-between p-2 hover:bg-muted rounded-lg cursor-pointer transition-colors"
@@ -326,6 +646,11 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
               </div>
             ))}
           </div>
+          {filteredLocations.length > 5 && (
+            <p className="text-xs text-muted-foreground text-center mt-3">
+              + {filteredLocations.length - 5} more job{filteredLocations.length - 5 !== 1 ? 's' : ''} available
+            </p>
+          )}
         </Card>
       )}
     </div>

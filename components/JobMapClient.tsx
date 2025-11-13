@@ -2,9 +2,22 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { JobMap } from "@/components/JobMap"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-import { Map, List } from "lucide-react"
+import { Map, List, Loader2 } from "lucide-react"
+
+// Dynamically import GoogleJobMap to ensure it only loads on client side
+const GoogleJobMap = dynamic(
+  () => import("@/components/GoogleJobMap").then((mod) => mod.GoogleJobMap),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-[500px] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+)
 
 interface JobMapClientProps {
   jobs: Array<{
@@ -12,15 +25,19 @@ interface JobMapClientProps {
     title: string
     company: string
     location: string
+    lat?: number | null
+    lng?: number | null
     type: string
     salaryMin?: number | null
     salaryMax?: number | null
+    salaryCurrency?: string | null
+    employerType?: string | null
   }>
 }
 
 export function JobMapClient({ jobs }: JobMapClientProps) {
   const router = useRouter()
-  const [viewMode, setViewMode] = useState<"map" | "list">("list")
+  const [viewMode, setViewMode] = useState<"map" | "list">("map")
 
   const handleJobClick = (jobId: string) => {
     router.push(`/jobs/${jobId}`)
@@ -56,7 +73,7 @@ export function JobMapClient({ jobs }: JobMapClientProps) {
       </div>
 
       {viewMode === "map" ? (
-        <JobMap jobs={jobs} onJobClick={handleJobClick} />
+        <GoogleJobMap jobs={jobs} onJobClick={handleJobClick} />
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <p>Switch to Map View to see job locations</p>

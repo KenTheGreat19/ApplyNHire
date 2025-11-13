@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { JobsDataTable } from "@/components/JobsDataTable"
 import { JobFormDialog } from "@/components/JobFormDialog"
+import { EmployerSidebar } from "@/components/employer/EmployerSidebar"
 import { Plus, Briefcase, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { Job } from "@prisma/client"
 import { toast } from "sonner"
@@ -26,15 +27,23 @@ type JobWithApplications = Job & {
 }
 
 interface EmployerDashboardClientProps {
-  companyName: string
+  user: {
+    name: string
+    email: string
+    companyName?: string
+  }
 }
 
-export default function EmployerDashboardClient({ companyName }: EmployerDashboardClientProps) {
+export default function EmployerDashboardClient({ user }: EmployerDashboardClientProps) {
   const [jobs, setJobs] = React.useState<JobWithApplications[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [showJobDialog, setShowJobDialog] = React.useState(false)
   const [selectedJob, setSelectedJob] = React.useState<Job | null>(null)
   const [jobToDelete, setJobToDelete] = React.useState<string | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+
+  const companyName = user.companyName || user.name
 
   const fetchJobs = React.useCallback(async () => {
     try {
@@ -91,17 +100,69 @@ export default function EmployerDashboardClient({ companyName }: EmployerDashboa
     }
   }, [jobs])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar */}
+      <EmployerSidebar 
+        collapsed={sidebarCollapsed}
+        onCollapse={setSidebarCollapsed}
+        mobileOpen={mobileMenuOpen}
+        onMobileToggle={setMobileMenuOpen}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="lg:hidden fixed bottom-6 right-6 z-30 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+            aria-label="Open menu"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Header */}
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              Welcome back, {user.email}!
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {companyName} • Manage your job postings
+            </p>
+          </div>
+
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <>
+              {/* Pending Jobs Alert */}
+              {stats.pending > 0 && (
+                <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-yellow-900 dark:text-yellow-200">
+                          {stats.pending} Job{stats.pending > 1 ? 's' : ''} Awaiting Approval
+                        </h3>
+                        <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                          Your job{stats.pending > 1 ? 's are' : ' is'} pending admin approval. Jobs will appear on the homepage once approved. 
+                          This usually takes 1-2 business days.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Stats Cards */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Jobs</CardTitle>
@@ -119,6 +180,7 @@ export default function EmployerDashboardClient({ companyName }: EmployerDashboa
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
           </CardContent>
         </Card>
 
@@ -189,6 +251,10 @@ export default function EmployerDashboardClient({ companyName }: EmployerDashboa
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
