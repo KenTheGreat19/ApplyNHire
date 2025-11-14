@@ -23,6 +23,7 @@ export async function TrendingJobs() {
           isVerified: true,
           totalReviews: true,
           hasVerifiedBadge: true,
+          employerType: true,
         },
       },
     },

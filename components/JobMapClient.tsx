@@ -6,14 +6,14 @@ import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Map, List, Loader2 } from "lucide-react"
 
-// Dynamically import GoogleJobMap to ensure it only loads on client side
-const GoogleJobMap = dynamic(
-  () => import("@/components/GoogleJobMap").then((mod) => mod.GoogleJobMap),
+// Dynamically import JobMapHierarchical (uses free OpenStreetMap with zoom-based clustering)
+const JobMap = dynamic(
+  () => import("@/components/JobMapHierarchical").then((mod) => ({ default: mod.JobMap })),
   { 
     ssr: false,
     loading: () => (
-      <div className="h-[500px] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="h-[500px] flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     )
   }
@@ -73,7 +73,7 @@ export function JobMapClient({ jobs }: JobMapClientProps) {
       </div>
 
       {viewMode === "map" ? (
-        <GoogleJobMap jobs={jobs} onJobClick={handleJobClick} />
+        <JobMap jobs={jobs} onJobClick={handleJobClick} height={500} />
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <p>Switch to Map View to see job locations</p>

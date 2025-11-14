@@ -16,7 +16,7 @@ import {
 import { JobsDataTable } from "@/components/JobsDataTable"
 import { JobFormDialog } from "@/components/JobFormDialog"
 import { EmployerSidebar } from "@/components/employer/EmployerSidebar"
-import { Plus, Briefcase, Clock, CheckCircle2, XCircle } from "lucide-react"
+import { Plus, Briefcase, Clock, CheckCircle2, XCircle, Users } from "lucide-react"
 import { Job } from "@prisma/client"
 import { toast } from "sonner"
 
@@ -31,6 +31,7 @@ interface EmployerDashboardClientProps {
     name: string
     email: string
     companyName?: string
+    employerType?: string | null
   }
 }
 
@@ -141,26 +142,6 @@ export default function EmployerDashboardClient({ user }: EmployerDashboardClien
             </div>
           ) : (
             <>
-              {/* Pending Jobs Alert */}
-              {stats.pending > 0 && (
-                <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-yellow-900 dark:text-yellow-200">
-                          {stats.pending} Job{stats.pending > 1 ? 's' : ''} Awaiting Approval
-                        </h3>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
-                          Your job{stats.pending > 1 ? 's are' : ' is'} pending admin approval. Jobs will appear on the homepage once approved. 
-                          This usually takes 1-2 business days.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Stats Cards */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
@@ -175,22 +156,23 @@ export default function EmployerDashboardClient({ user }: EmployerDashboardClien
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium">Active</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
+            <div className="text-2xl font-bold">{stats.approved}</div>
+            <p className="text-xs text-muted-foreground mt-1">Live on platform</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Applications</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.approved}</div>
+            <div className="text-2xl font-bold">{stats.totalApplications || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total received</p>
           </CardContent>
         </Card>
 
@@ -232,6 +214,7 @@ export default function EmployerDashboardClient({ user }: EmployerDashboardClien
         onOpenChange={setShowJobDialog}
         job={selectedJob}
         companyName={companyName}
+        employerType={user.employerType}
         onSuccess={fetchJobs}
       />
 

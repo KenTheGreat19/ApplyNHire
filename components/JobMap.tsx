@@ -29,87 +29,13 @@ const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false }
 )
-const Popup = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Popup),
+const useMapEvents = dynamic(
+  () => import("react-leaflet").then((mod) => mod.useMapEvents),
   { ssr: false }
 )
 
-// Custom MarkerClusterGroup wrapper component
-const MarkerClusterGroup = dynamic(
-  () => import("react-leaflet").then(async (mod) => {
-    const L = await import("leaflet")
-    await import("leaflet.markercluster")
-    
-    return ({ children }: any) => {
-      const map = (mod as any).useMap()
-      const [clusterGroup] = useState(() => {
-        return (L.default as any).markerClusterGroup({
-          iconCreateFunction: (cluster: any) => {
-            const childCount = cluster.getChildCount()
-            const childMarkers = cluster.getAllChildMarkers()
-            
-            // Determine dominant employer type
-            const typeCounts: Record<string, number> = {}
-            childMarkers.forEach((marker: any) => {
-              const type = marker.options.employerType || 'COMPANY'
-              typeCounts[type] = (typeCounts[type] || 0) + 1
-            })
-            
-            const dominantType = Object.keys(typeCounts).reduce((a, b) => 
-              typeCounts[a] > typeCounts[b] ? a : b
-            , 'COMPANY')
-            
-            let clusterClass = 'marker-cluster-company'
-            if (dominantType === 'AGENCY') clusterClass = 'marker-cluster-agency'
-            if (dominantType === 'CLIENT') clusterClass = 'marker-cluster-client'
-            
-            return L.default.divIcon({
-              html: `<div><span>${childCount}</span></div>`,
-              className: `marker-cluster ${clusterClass}`,
-              iconSize: L.default.point(40, 40)
-            })
-          }
-        })
-      })
-
-      useEffect(() => {
-        if (map && clusterGroup) {
-          map.addLayer(clusterGroup)
-          return () => {
-            map.removeLayer(clusterGroup)
-          }
-        }
-        return undefined
-      }, [map, clusterGroup])
-
-      useEffect(() => {
-        if (clusterGroup) {
-          clusterGroup.clearLayers()
-          if (children) {
-            const markers = Array.isArray(children) ? children : [children]
-            markers.forEach((child: any) => {
-              if (child?.props?.position) {
-                const marker = L.default.marker(child.props.position, {
-                  icon: child.props.icon
-                }) as any
-                marker.options.employerType = child.props.employerType
-                if (child.props.children?.props?.children) {
-                  // Create a container div for the popup content
-                  const popupDiv = document.createElement('div')
-                  popupDiv.className = 'min-w-[200px]'
-                  // We'll set innerHTML after the popup is created
-                  marker.bindPopup(popupDiv)
-                }
-                clusterGroup.addLayer(marker)
-              }
-            })
-          }
-        }
-      }, [children, clusterGroup])
-
-      return null
-    }
-  }),
+const useMapEvents = dynamic(
+  () => import("react-leaflet").then((mod) => mod.useMapEvents),
   { ssr: false }
 )
 
@@ -125,6 +51,19 @@ interface JobLocation {
   salaryMin?: number | null
   salaryMax?: number | null
   employerType?: string | null
+  streetAddress?: string
+  city?: string
+  state?: string
+  country?: string
+}
+
+interface LocationCluster {
+  lat: number
+  lng: number
+  count: number
+  jobs: JobLocation[]
+  label: string
+  level: 'country' | 'state' | 'city' | 'street'
 }
 
 interface JobMapProps {
@@ -141,18 +80,32 @@ interface JobMapProps {
   onJobClick?: (jobId: string) => void
 }
 
-// Simple geocoding function using Nominatim (free OpenStreetMap service)
-async function geocodeLocation(location: string): Promise<{ lat: number; lng: number } | null> {
+// Geocoding with detailed location breakdown
+async function geocodeLocation(location: string): Promise<{
+  lat: number
+  lng: number
+  streetAddress?: string
+  city?: string
+  state?: string
+  country?: string
+} | null> {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&limit=1&addressdetails=1`,
       { headers: { "User-Agent": "ApplyNHire/1.0" } }
     )
     const data = await response.json()
     if (data && data.length > 0) {
+      const result = data[0]
+      const address = result.address || {}
+      
       return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
+        lat: parseFloat(result.lat),
+        lng: parseFloat(result.lon),
+        streetAddress: address.road || address.street || address.house_number,
+        city: address.city || address.town || address.village || address.municipality,
+        state: address.state || address.province || address.region,
+        country: address.country
       }
     }
   } catch (error) {
@@ -541,10 +494,9 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
               scrollWheelZoom={true}
             >
               <TileLayer
-                url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-                maxZoom={20}
-                subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
-                attribution=""
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxZoom={19}
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               
               {/* User location marker */}
@@ -552,64 +504,74 @@ export function JobMap({ jobs, onJobClick }: JobMapProps) {
                 <Marker 
                   position={[userLocation.lat, userLocation.lng]}
                   icon={(window as any).userIcon}
-                >
-                  <Popup>
-                    <div className="text-center font-semibold">
-                      📍 Your Location
-                    </div>
-                  </Popup>
-                </Marker>
+                  eventHandlers={{
+                    add: (e) => {
+                      e.target.bindPopup(`
+                        <div style="text-align: center; font-weight: 600; font-family: system-ui, -apple-system, sans-serif;">
+                          📍 Your Location
+                        </div>
+                      `);
+                    }
+                  }}
+                />
               )}
 
               {/* Job markers with clustering */}
               <MarkerClusterGroup>
                 {filteredLocations.map((job, index) => {
-                  // Create popup HTML string
-                  const typeColor = job.employerType === 'COMPANY' ? 'bg-blue-500' :
-                                   job.employerType === 'AGENCY' ? 'bg-green-500' : 'bg-yellow-500'
+                  const typeColor = job.employerType === 'COMPANY' ? '#3b82f6' : 
+                                   job.employerType === 'AGENCY' ? '#10b981' : '#eab308';
                   
-                  const popupContent = `
-                    <div style="min-width: 200px; padding: 8px;">
-                      <h3 style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;">${job.title}</h3>
-                      <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">${job.company}</p>
-                      <p style="font-size: 0.75rem; margin-bottom: 0.25rem;">📍 ${job.location}</p>
+                  const popupHTML = `
+                    <div style="min-width: 220px; padding: 4px; font-family: system-ui, -apple-system, sans-serif;">
+                      <h3 style="font-weight: 600; font-size: 1rem; margin-bottom: 8px; color: #111827;">
+                        ${job.title}
+                      </h3>
+                      <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 8px;">
+                        ${job.company}
+                      </p>
+                      <p style="font-size: 0.875rem; margin-bottom: 8px;">
+                        📍 ${job.location}
+                      </p>
                       ${job.employerType ? `
-                        <p style="font-size: 0.75rem; margin-bottom: 0.25rem;">
-                          <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 0.75rem;" class="${typeColor}">
+                        <p style="font-size: 0.75rem; margin-bottom: 8px;">
+                          <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; color: white; font-size: 0.75rem; font-weight: 500; background-color: ${typeColor};">
                             ${job.employerType}
                           </span>
                         </p>
                       ` : ''}
                       ${job.distance ? `
-                        <p style="font-size: 0.75rem; color: #2563eb; margin-bottom: 0.5rem;">
-                          📍 ${job.distance.toFixed(1)} km away
+                        <p style="font-size: 0.875rem; color: #2563eb; margin-bottom: 8px;">
+                          🗺️ ${job.distance.toFixed(1)} km away
                         </p>
                       ` : ''}
                       ${job.salaryMin && job.salaryMax ? `
-                        <p style="font-size: 0.75rem; margin-bottom: 0.5rem;">
+                        <p style="font-size: 0.875rem; margin-bottom: 12px; color: #059669;">
                           💰 $${job.salaryMin.toLocaleString()} - $${job.salaryMax.toLocaleString()}
                         </p>
                       ` : ''}
-                      <button 
-                        onclick="window.location.href='/jobs/${job.id}'"
-                        style="width: 100%; font-size: 0.75rem; padding: 6px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;"
+                      <a 
+                        href="/jobs/${job.id}"
+                        style="display: block; width: 100%; text-align: center; font-size: 0.875rem; padding: 8px 16px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; cursor: pointer;"
                         onmouseover="this.style.background='#1d4ed8'"
                         onmouseout="this.style.background='#2563eb'"
                       >
-                        View Details
-                      </button>
+                        View Details →
+                      </a>
                     </div>
-                  `
+                  `;
                   
                   return (
                     <Marker 
                       key={job.id} 
                       position={[job.lat, job.lng]}
                       icon={(window as any).createJobIcon?.(job.employerType || 'COMPANY', index)}
-                      {...({ employerType: job.employerType || 'COMPANY', popupContent } as any)}
-                    >
-                      <Popup>{popupContent}</Popup>
-                    </Marker>
+                      eventHandlers={{
+                        add: (e) => {
+                          e.target.bindPopup(popupHTML, { maxWidth: 280 });
+                        }
+                      }}
+                    />
                   )
                 })}
               </MarkerClusterGroup>

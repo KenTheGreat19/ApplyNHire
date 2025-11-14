@@ -55,6 +55,7 @@ export async function JobList({ searchParams }: JobListProps) {
             isVerified: true,
             totalReviews: true,
             hasVerifiedBadge: true,
+            employerType: true,
           },
         },
         _count: {

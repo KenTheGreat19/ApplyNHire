@@ -76,7 +76,8 @@ export function ApplyButton({ jobId, applyUrl, jobTitle, acceptApplicationsHere 
   if (acceptApplicationsHere) {
     return (
       <>
-        <div className="space-y-2">
+        <div className="space-y-3">
+          {/* Internal Apply Button */}
           <Button
             onClick={handleInternalApply}
             className="w-full bg-[#10B981] hover:bg-[#10B981]/90 text-white text-lg py-6 font-semibold"
@@ -86,8 +87,35 @@ export function ApplyButton({ jobId, applyUrl, jobTitle, acceptApplicationsHere 
             Apply Now
           </Button>
           
+          {/* External Apply Button (if URL provided) */}
+          {applyUrl && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleExternalApply}
+                variant="outline"
+                className="w-full border-2 border-[#10B981] text-[#10B981] hover:bg-[#10B981]/10 text-lg py-6 font-semibold"
+                size="lg"
+              >
+                <ExternalLink className="h-5 w-5 mr-2" />
+                Apply on Company Website
+              </Button>
+            </>
+          )}
+          
           <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-            Your application will be submitted directly to the employer
+            {applyUrl 
+              ? "Choose your preferred application method"
+              : "Your application will be submitted directly to the employer"
+            }
           </p>
         </div>
 

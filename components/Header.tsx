@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Menu, X, Moon, Sun, LogOut, LayoutDashboard } from "lucide-react"
+import { Menu, X, Moon, Sun, LogOut, LayoutDashboard, Globe } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -14,12 +15,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLanguage, languages } from "@/contexts/LanguageContext"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
   const { data: session, status } = useSession()
+  const { currentLanguage, setLanguage } = useLanguage()
 
   useEffect(() => {
     setMounted(true)
@@ -38,6 +41,47 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-4">
+          {/* Language Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-2"
+                aria-label="Select language"
+              >
+                <Image 
+                  src={currentLanguage.flagIcon} 
+                  alt={currentLanguage.name}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <Globe className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 max-h-96 overflow-y-auto">
+              <DropdownMenuLabel>Select Language</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {languages.map((language) => (
+                <DropdownMenuItem
+                  key={language.code}
+                  onClick={() => setLanguage(language)}
+                  className="cursor-pointer"
+                >
+                  <Image 
+                    src={language.flagIcon} 
+                    alt={language.name}
+                    width={24}
+                    height={24}
+                    className="rounded-full mr-3"
+                  />
+                  <span className={currentLanguage.code === language.code ? "font-semibold" : ""}>
+                    {language.name}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -128,7 +172,46 @@ export function Header() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40 p-4 flex flex-col gap-4">
+        <div className="md:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-40 p-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Language Selector - Mobile */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full p-3 flex items-center justify-center gap-2 rounded-md bg-gray-100 dark:bg-gray-800">
+                <Image 
+                  src={currentLanguage.flagIcon} 
+                  alt={currentLanguage.name}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <Globe className="h-5 w-5" />
+                <span>{currentLanguage.name}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56 max-h-96 overflow-y-auto">
+              <DropdownMenuLabel>Select Language</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {languages.map((language) => (
+                <DropdownMenuItem
+                  key={language.code}
+                  onClick={() => setLanguage(language)}
+                  className="cursor-pointer"
+                >
+                  <Image 
+                    src={language.flagIcon} 
+                    alt={language.name}
+                    width={24}
+                    height={24}
+                    className="rounded-full mr-3"
+                  />
+                  <span className={currentLanguage.code === language.code ? "font-semibold" : ""}>
+                    {language.name}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

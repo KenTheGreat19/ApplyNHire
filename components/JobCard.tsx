@@ -13,7 +13,9 @@ interface JobCardProps {
     id: string
     title: string
     company: string
-    location: string
+    clientCompanyName?: string | null
+    location?: string | null
+    workMode?: string
     type: string
     description: string
     salaryMin?: number | null
@@ -26,6 +28,7 @@ interface JobCardProps {
       averageRating: number
       isVerified: boolean
       totalReviews: number
+      employerType?: string | null
     }
   }
   showTrendingBadge?: boolean
@@ -39,9 +42,23 @@ export function JobCard({ job, showTrendingBadge }: JobCardProps) {
     internship: "Internship",
   }
 
-  const isRemote = job.location.toLowerCase().includes("remote")
+  const workModeLabels: Record<string, string> = {
+    remote: "Remote",
+    onsite: "Onsite",
+    hybrid: "Hybrid",
+  }
+
+  const employerTypeLabels: Record<string, string> = {
+    COMPANY: "Company",
+    AGENCY: "Agency",
+    CLIENT: "Client",
+  }
+
+  const isRemote = job.location?.toLowerCase().includes("remote") || job.workMode === "remote"
   const timeAgo = formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
   const salary = formatSalary(job.salaryMin, job.salaryMax)
+  const workMode = workModeLabels[job.workMode || "onsite"] || "Onsite"
+  const employerType = employerTypeLabels[job.employer?.employerType as string] || null
 
   return (
     <Card className={`hover:shadow-lg transition-shadow ${job.isSponsored ? 'border-2 border-yellow-400 dark:border-yellow-600' : ''}`}>
@@ -70,7 +87,15 @@ export function JobCard({ job, showTrendingBadge }: JobCardProps) {
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-gray-600 dark:text-gray-400 font-medium">
             {job.company}
+            {job.clientCompanyName && job.employer?.employerType === "AGENCY" && (
+              <span className="text-sm text-gray-500 ml-1">→ {job.clientCompanyName}</span>
+            )}
           </p>
+          {employerType && (
+            <Badge variant="outline" className="text-xs">
+              {employerType}
+            </Badge>
+          )}
           {job.employer?.isVerified && (
             <span className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
               <CheckCircle className="h-3 w-3" />
@@ -90,8 +115,15 @@ export function JobCard({ job, showTrendingBadge }: JobCardProps) {
         <div className="flex flex-wrap gap-2">
           <Badge variant={isRemote ? "success" : "secondary"} className="flex items-center gap-1">
             <MapPin className="h-3 w-3" />
-            {job.location}
+            {workMode}
           </Badge>
+
+          {job.location && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {job.location}
+            </Badge>
+          )}
 
           <Badge variant="default" className="flex items-center gap-1">
             <Briefcase className="h-3 w-3" />

@@ -1,15 +1,16 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Briefcase, Calendar, MapPin, ExternalLink, User, Loader2 } from "lucide-react"
+import { Briefcase, Calendar, MapPin, ExternalLink, User, UserCircle } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import Link from "next/link"
+import { ApplicantProfileForm } from "@/components/applicant/ApplicantProfileForm"
 
 interface Application {
   id: string
@@ -30,6 +31,8 @@ interface ApplicantDashboardClientProps {
 }
 
 export default function ApplicantDashboardClient({ userName, userEmail }: ApplicantDashboardClientProps) {
+  const searchParams = useSearchParams()
+  const defaultTab = searchParams.get("tab") || "applications"
   const [applications, setApplications] = React.useState<Application[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isEditingProfile, setIsEditingProfile] = React.useState(false)
@@ -80,120 +83,113 @@ export default function ApplicantDashboardClient({ userName, userEmail }: Applic
   }
 
   return (
-    <div className="space-y-8">
-      {/* Applied Jobs Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Your Applications</CardTitle>
-              <CardDescription>
-                Jobs you've applied to ({applications.length})
-              </CardDescription>
-            </div>
-            <Link href="/">
-              <Button>
-                <Briefcase className="mr-2 h-4 w-4" />
-                Browse All Jobs
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {applications.length === 0 ? (
-            <div className="text-center py-12">
-              <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No applications yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start applying to jobs to see them here
-              </p>
+    <Tabs defaultValue={defaultTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsTrigger value="applications" className="flex items-center gap-2">
+          <Briefcase className="h-4 w-4" />
+          Applications
+        </TabsTrigger>
+        <TabsTrigger value="profile" className="flex items-center gap-2">
+          <UserCircle className="h-4 w-4" />
+          Job Fit Profile
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="applications" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Your Applications</CardTitle>
+                <CardDescription>
+                  Jobs you've applied to ({applications.length})
+                </CardDescription>
+              </div>
               <Link href="/">
-                <Button>Browse Jobs</Button>
+                <Button>
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Browse All Jobs
+                </Button>
               </Link>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {applications.map((application) => (
-                <div
-                  key={application.id}
-                  className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">
-                      {application.job.title}
-                    </h3>
-                    <p className="text-muted-foreground mb-2">
-                      {application.job.company}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {application.job.location}
-                      </Badge>
-                      <Badge variant="default">
-                        {application.job.type.replace("_", " ").toUpperCase()}
-                      </Badge>
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Applied {format(new Date(application.appliedAt), "MMM d, yyyy")}
-                      </Badge>
+          </CardHeader>
+          <CardContent>
+            {applications.length === 0 ? (
+              <div className="text-center py-12">
+                <Briefcase className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No applications yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start applying to jobs to see them here
+                </p>
+                <Link href="/">
+                  <Button>Browse Jobs</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {applications.map((application) => (
+                  <div
+                    key={application.id}
+                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1">
+                        {application.job.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-2">
+                        {application.job.company}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {application.job.location}
+                        </Badge>
+                        <Badge variant="default">
+                          {application.job.type.replace("_", " ").toUpperCase()}
+                        </Badge>
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Applied {format(new Date(application.appliedAt), "MMM d, yyyy")}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link href={`/jobs/${application.job.id}`} target="_blank">
+                        <Button variant="outline" size="sm">
+                          View Job
+                        </Button>
+                      </Link>
+                      <a href={application.job.applyUrl} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="w-full">
+                          <ExternalLink className="mr-2 h-3 w-3" />
+                          Application Link
+                        </Button>
+                      </a>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Link href={`/jobs/${application.job.id}`} target="_blank">
-                      <Button variant="outline" size="sm">
-                        View Job
-                      </Button>
-                    </Link>
-                    <a href={application.job.applyUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" className="w-full">
-                        <ExternalLink className="mr-2 h-3 w-3" />
-                        Application Link
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
 
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Your Profile
-          </CardTitle>
-          <CardDescription>Update your personal information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleProfileUpdate} className="space-y-4 max-w-md">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileData.email}
-                onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-              />
-            </div>
-            <Button type="submit" disabled={isEditingProfile}>
-              {isEditingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+      <TabsContent value="profile" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5" />
+              Job Fit Profile
+            </CardTitle>
+            <CardDescription>
+              Complete your profile to see how well you match job requirements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApplicantProfileForm />
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   )
 }

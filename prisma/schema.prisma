@@ -74,6 +74,7 @@ model User {
   jobImpressions      JobImpression[]
   subscriptions       Subscription[]
   jobLikes            JobLike[]
+  applicantProfile    ApplicantProfile?
 
   @@index([email])
   @@index([role])
@@ -86,9 +87,11 @@ model Job {
   id                  String   @id @default(cuid())
   title               String
   company             String
-  location            String
+  clientCompanyName   String?  // For AGENCY: company they're recruiting for
+  location            String?  // Optional for CLIENT type
   locationLat         Float?
   locationLng         Float?
+  workMode            String   @default("onsite")  // "remote", "onsite", "hybrid"
   type                String
   category            String?  // Job category like "Technology", "Healthcare", etc.
   description         String
@@ -138,6 +141,8 @@ model Job {
   savedBy             SavedJob[]
   impressions         JobImpression[]
   likes               JobLike[]
+  fitCriteria         JobFitCriteria?
+  fitScores           JobFitScore[]
 
   @@index([employerId])
   @@index([status])
@@ -509,4 +514,122 @@ model CandidateSearch {
 
   @@index([userId])
   @@index([lastUsed])
+}
+
+// Job Fit Grading System Models
+model JobFitCriteria {
+  id                    String   @id @default(cuid())
+  jobId                 String   @unique
+  
+  // Education Requirements
+  minEducation          String?  // "high_school", "bachelor", "master", "phd"
+  preferredEducation    String?
+  certificationsRequired String? // JSON array
+  
+  // Experience Requirements
+  minYearsExperience    Int      @default(0)
+  preferredYearsExperience Int?
+  relevantIndustry      String?
+  
+  // Essential Skills (Soft Skills)
+  essentialSkills       String?  // JSON array with weights
+  essentialSkillsWeight Int      @default(20)
+  
+  // Technical Skills (Hard Skills)
+  technicalSkills       String?  // JSON array with proficiency levels
+  technicalSkillsWeight Int      @default(30)
+  
+  // Personal Attributes
+  personalAttributes    String?  // JSON array
+  attributesWeight      Int      @default(15)
+  
+  // Cultural Fit
+  culturalValues        String?  // JSON array
+  workStyle             String?
+  culturalWeight        Int      @default(10)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  job                   Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@index([jobId])
+}
+
+model ApplicantProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  
+  // Education Details
+  educationLevel        String?  // "high_school", "bachelor", "master", "phd"
+  degrees               String?  // JSON array
+  certifications        String?  // JSON array
+  relevantCourses       String?  // JSON array
+  
+  // Experience Details
+  totalYearsExperience  Int      @default(0)
+  currentRole           String?
+  industries            String?  // JSON array
+  achievements          String?  // JSON array
+  
+  // Essential Skills (Soft Skills)
+  softSkills            String?  // JSON array with self-rating
+  
+  // Technical Skills (Hard Skills)
+  hardSkills            String?  // JSON array with proficiency level
+  
+  // Personal Attributes
+  workStyle             String?
+  desiredResponsibilities String?
+  personalTraits        String?  // JSON array
+  
+  // Cultural Fit
+  workEnvironmentPref   String?
+  values                String?  // JSON array
+  teamSizePreference    String?
+  
+  // Profile Completeness
+  profileCompleteness   Int      @default(0) // Percentage 0-100
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fitScores             JobFitScore[]
+  
+  @@index([userId])
+}
+
+model JobFitScore {
+  id                    String   @id @default(cuid())
+  jobId                 String
+  applicantId           String
+  
+  // Category Scores (0-100)
+  educationScore        Int      @default(0)
+  experienceScore       Int      @default(0)
+  essentialSkillsScore  Int      @default(0)
+  technicalSkillsScore  Int      @default(0)
+  attributesScore       Int      @default(0)
+  culturalFitScore      Int      @default(0)
+  
+  // Overall Score
+  overallScore          Int      @default(0)
+  
+  // Status per category
+  educationStatus       String   @default("failed") // "passed", "partially", "failed"
+  experienceStatus      String   @default("failed")
+  essentialSkillsStatus String   @default("failed")
+  technicalSkillsStatus String   @default("failed")
+  attributesStatus      String   @default("failed")
+  culturalFitStatus     String   @default("failed")
+  
+  calculatedAt          DateTime @default(now())
+  
+  job                   Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantProfile      ApplicantProfile @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  
+  @@unique([jobId, applicantId])
+  @@index([jobId])
+  @@index([applicantId])
 }

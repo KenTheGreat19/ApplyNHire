@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { PublicComments } from "@/components/PublicComments"
 import { EmployerPublicReviews } from "@/components/EmployerPublicReviews"
-import { GoogleJobLocationMap } from "@/components/GoogleJobLocationMap"
+import { JobFitGradingWidget } from "@/components/JobFitGradingWidget"
 import { formatDistanceToNow } from "date-fns"
 import { formatSalary } from "@/lib/utils"
 
@@ -44,6 +44,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           id: true,
           name: true,
           companyName: true,
+          employerType: true,
         },
       },
     },
@@ -60,9 +61,24 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     internship: "Internship",
   }
 
-  const isRemote = job.location.toLowerCase().includes("remote")
+  const workModeLabels: Record<string, string> = {
+    remote: "Remote",
+    onsite: "Onsite",
+    hybrid: "Hybrid",
+  }
+
+  const employerTypeLabels: Record<string, string> = {
+    COMPANY: "Company",
+    AGENCY: "Recruitment Agency",
+    CLIENT: "Direct Client",
+  }
+
+  const isRemote = job.location?.toLowerCase().includes("remote") || (job as any).workMode === "remote"
   const timeAgo = formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })
   const salary = formatSalary(job.salaryMin, job.salaryMax, (job as any).salaryCurrency || "USD")
+  const workMode = workModeLabels[(job as any).workMode || "onsite"] || "Onsite"
+  const employerType = employerTypeLabels[job.employer.employerType as string] || "Company"
+  const clientCompanyName = (job as any).clientCompanyName
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
@@ -80,13 +96,32 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 <div className="flex items-center gap-2 text-lg text-gray-600 dark:text-gray-400 mb-4">
                   <Building2 className="h-5 w-5" />
                   <span className="font-semibold">{job.company}</span>
+                  {clientCompanyName && job.employer.employerType === "AGENCY" && (
+                    <span className="text-sm text-gray-500">for {clientCompanyName}</span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-3">
+                  {/* Employer Type Badge */}
+                  <Badge 
+                    variant={job.employer.employerType === "COMPANY" ? "default" : job.employer.employerType === "AGENCY" ? "secondary" : "outline"}
+                    className="py-1.5"
+                  >
+                    {employerType}
+                  </Badge>
+
+                  {/* Work Mode Badge */}
                   <Badge variant={isRemote ? "success" : "secondary"} className="flex items-center gap-1 py-1.5">
                     <MapPin className="h-4 w-4" />
-                    {job.location}
+                    {workMode}
                   </Badge>
+
+                  {job.location && (
+                    <Badge variant="outline" className="flex items-center gap-1 py-1.5">
+                      <MapPin className="h-4 w-4" />
+                      {job.location}
+                    </Badge>
+                  )}
 
                   <Badge variant="default" className="flex items-center gap-1 py-1.5">
                     <Briefcase className="h-4 w-4" />
@@ -134,17 +169,37 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Job Fit Grading Widget - Only visible to logged-in applicants */}
+            <JobFitGradingWidget jobId={job.id} />
+
             {/* Job Location Map */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Job Location</h3>
-              <GoogleJobLocationMap 
-                location={job.location}
-                locationLat={(job as any).locationLat}
-                locationLng={(job as any).locationLng}
-                jobTitle={job.title}
-                company={job.company}
-              />
-            </div>
+            {job.location && (job as any).locationLat && (job as any).locationLng && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Job Location</h3>
+                <div className="rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
+                  <iframe
+                    width="100%"
+                    height="300"
+                    frameBorder="0"
+                    scrolling="no"
+                    marginHeight={0}
+                    marginWidth={0}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${(job as any).locationLng - 0.01},${(job as any).locationLat - 0.01},${(job as any).locationLng + 0.01},${(job as any).locationLat + 0.01}&layer=mapnik&marker=${(job as any).locationLat},${(job as any).locationLng}`}
+                    style={{ border: 0 }}
+                  />
+                  <div className="p-2 text-sm text-gray-600 dark:text-gray-400">
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${(job as any).locationLat}&mlon=${(job as any).locationLng}#map=15/${(job as any).locationLat}/${(job as any).locationLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      View Larger Map →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Apply Button Card */}
             <Card>
               <CardContent className="pt-6">
@@ -160,17 +215,30 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             {/* Company Info Card */}
             <Card>
               <CardHeader>
-                <h3 className="text-lg font-semibold">About the Company</h3>
+                <h3 className="text-lg font-semibold">Job Details</h3>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Company</p>
-                  <p className="font-medium">{job.company}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Posted By</p>
+                  <p className="font-medium">{employerType}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
-                  <p className="font-medium">{job.location}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Company</p>
+                  <p className="font-medium">{job.company}</p>
+                  {clientCompanyName && job.employer.employerType === "AGENCY" && (
+                    <p className="text-sm text-gray-500 mt-1">Recruiting for: {clientCompanyName}</p>
+                  )}
                 </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Work Mode</p>
+                  <p className="font-medium">{workMode}</p>
+                </div>
+                {job.location && (
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                    <p className="font-medium">{job.location}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Employment Type</p>
                   <p className="font-medium">{employmentTypeLabels[job.type] || job.type}</p>

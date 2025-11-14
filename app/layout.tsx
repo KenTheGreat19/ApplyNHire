@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SessionProvider } from "@/components/SessionProvider"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { LanguageProvider } from "@/contexts/LanguageContext"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { Toaster } from "sonner"
@@ -61,17 +62,19 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen flex flex-col`} suppressHydrationWarning>
         <ErrorBoundary>
           <SessionProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem={false}
-              disableTransitionOnChange
-            >
-              <Header />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <Toaster position="top-center" richColors />
-            </ThemeProvider>
+            <LanguageProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem={false}
+                disableTransitionOnChange
+              >
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+                <Toaster position="top-center" richColors />
+              </ThemeProvider>
+            </LanguageProvider>
           </SessionProvider>
         </ErrorBoundary>
       </body>
