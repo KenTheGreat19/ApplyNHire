@@ -1,19 +1,19 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import EmployerJobsClient from "./EmployerJobsClient"
+import ActionCenterClient from "./ActionCenterClient"
 
 export const metadata = {
-  title: "Jobs Workspace - ApplyNHire",
-  description: "Manage, filter, and analyze your job postings in one place",
+  title: "Action Center - ApplyNHire",
+  description: "Centralized hiring tasks for employers",
 }
 
-export default async function EmployerJobsPage() {
+export default async function ActionCenterPage() {
   const session = await getServerSession(authOptions)
 
   if (!session?.user || (session.user as any).role !== "EMPLOYER") {
     redirect("/auth/employer")
   }
 
-  return <EmployerJobsClient user={session.user as any} />
+  return <ActionCenterClient user={session.user as any} />
 }

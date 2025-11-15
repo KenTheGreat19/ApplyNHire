@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -147,9 +148,9 @@ export function JobTagsManager() {
         <div>
           <h1 className="text-3xl font-bold">Manage your tags</h1>
           <p className="text-muted-foreground mt-1">
-            <a href="#" className="text-primary hover:underline">
+            <Link href="/employer/help-center" className="text-primary hover:underline">
               Learn more about tags
-            </a>
+            </Link>
           </p>
         </div>
         <Button className="gap-2" onClick={() => setIsCreateOpen(true)}>

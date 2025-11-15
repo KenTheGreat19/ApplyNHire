@@ -59,8 +59,18 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/faq" className="text-gray-600 dark:text-gray-400 hover:text-[#0A66C2]">
+                  FAQ
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-600 dark:text-gray-400 hover:text-[#0A66C2]">
                   {t("footer.contact")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/security" className="text-gray-600 dark:text-gray-400 hover:text-[#0A66C2]">
+                  Security
                 </Link>
               </li>
               <li>

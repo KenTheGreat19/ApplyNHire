@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -53,11 +54,13 @@ export function EmployerTools() {
                   Manage all your hiring tasks in one place. Stay organized with centralized workflow management.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="ghost" className="gap-2 p-0 h-auto">
-                  Go to Action Center
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                <CardContent>
+                  <Button variant="ghost" className="gap-2 p-0 h-auto" asChild>
+                    <Link href="/employer/tools/action-center">
+                      Go to Action Center
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
               </CardContent>
             </Card>
 
@@ -71,11 +74,13 @@ export function EmployerTools() {
                   Connect your Applicant Tracking System to sync candidates and streamline your workflow.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="ghost" className="gap-2 p-0 h-auto">
-                  View Integrations
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                <CardContent>
+                  <Button variant="ghost" className="gap-2 p-0 h-auto" asChild>
+                    <Link href="/employer/tools/integrations">
+                      View Integrations
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
               </CardContent>
             </Card>
 
@@ -89,11 +94,13 @@ export function EmployerTools() {
                   Set up automated workflows to save time on repetitive tasks and speed up hiring.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="ghost" className="gap-2 p-0 h-auto">
-                  Configure Automations
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                <CardContent>
+                  <Button variant="ghost" className="gap-2 p-0 h-auto" asChild>
+                    <Link href="/employer/tools/automations">
+                      Configure Automations
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
               </CardContent>
             </Card>
           </div>
@@ -253,9 +260,11 @@ export function EmployerTools() {
                           <div className="text-sm text-muted-foreground">ATS Platform</div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Connect
-                      </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/employer/tools/integrations?ats=${encodeURIComponent(ats)}`}>
+                            Connect
+                          </Link>
+                        </Button>
                     </div>
                   ))}
                 </div>
@@ -279,10 +288,12 @@ export function EmployerTools() {
                 <p className="text-muted-foreground mb-4">
                   Set up automations to handle repetitive tasks automatically
                 </p>
-                <Button className="gap-2">
-                  <Zap className="h-4 w-4" />
-                  Create Automation
-                </Button>
+                  <Button className="gap-2" asChild>
+                    <Link href="/employer/tools/automations">
+                      <Zap className="h-4 w-4" />
+                      Create Automation
+                    </Link>
+                  </Button>
               </div>
             </CardContent>
           </Card>

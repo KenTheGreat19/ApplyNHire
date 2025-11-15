@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { EmployerSidebar } from "@/components/employer/EmployerSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -151,8 +152,8 @@ export default function UsersManagementClient({ user }: UsersManagementClientPro
 
                   <div className="pt-6 border-t">
                     <p className="text-xs text-muted-foreground">
-                      By adding roles for users, I agree that this user's access will match the roles I have selected, and that I am authorized to grant such access. Pending invitations expire after 15 days. If you need to change the owner of your Indeed employer account, please{" "}
-                      <a href="#" className="text-blue-600 hover:underline">contact us</a>.
+                      By adding roles for users, I agree that this user's access will match the roles I have selected, and that I am authorized to grant such access. Pending invitations expire after 15 days. Need to change the owner of your ApplyNHire employer account?{" "}
+                      <Link href="/contact" className="text-blue-600 hover:underline">Contact us</Link>.
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {displayCompany}{displayEmployerId ? `, Employer ID: ${displayEmployerId}` : ""}
@@ -176,11 +177,11 @@ export default function UsersManagementClient({ user }: UsersManagementClientPro
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">©2025 Indeed</p>
               <div className="flex gap-4 text-sm">
-                <a href="#" className="text-blue-600 hover:underline">Cookies, privacy and terms</a>
-                <a href="#" className="text-blue-600 hover:underline">Privacy center</a>
-                <a href="#" className="text-blue-600 hover:underline">Security</a>
-                <a href="#" className="text-blue-600 hover:underline">Billing</a>
-                <a href="#" className="text-blue-600 hover:underline">Contact</a>
+                <Link href="/privacy" className="text-blue-600 hover:underline">Cookies, privacy and terms</Link>
+                <Link href="/privacy" className="text-blue-600 hover:underline">Privacy center</Link>
+                <Link href="/security" className="text-blue-600 hover:underline">Security</Link>
+                <Link href="/employer/billing" className="text-blue-600 hover:underline">Billing</Link>
+                <Link href="/contact" className="text-blue-600 hover:underline">Contact</Link>
               </div>
             </div>
           </div>

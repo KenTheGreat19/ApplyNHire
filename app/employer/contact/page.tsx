@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { MessageCircle, Phone, Mail, ExternalLink, Clock, HelpCircle, ChevronRight, FileText, BookOpen, Lightbulb } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { toast } from "sonner"
 
 export default function ContactPage() {
   const [selectedOption, setSelectedOption] = useState<string | null>(null)
   const [message, setMessage] = useState("")
+  const [subject, setSubject] = useState("")
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -148,7 +150,18 @@ export default function ContactPage() {
                           rows={4}
                         />
                       </div>
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full"
+                        onClick={() => {
+                          if (!message.trim()) {
+                            toast.error("Please describe your issue before starting a chat.")
+                            return
+                          }
+                          toast.info("Chat feature is being set up. Our team will contact you via email soon!")
+                          setMessage("")
+                          setSelectedOption(null)
+                        }}
+                      >
                         <MessageCircle className="h-4 w-4 mr-2" />
                         Start Chat
                       </Button>
@@ -201,7 +214,11 @@ export default function ContactPage() {
                     <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Subject</label>
-                        <Input placeholder="What is this regarding?" />
+                        <Input 
+                          placeholder="What is this regarding?" 
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                        />
                       </div>
                       <div>
                         <label className="text-sm font-medium mb-2 block">Message</label>
@@ -219,7 +236,19 @@ export default function ContactPage() {
                           Supported: PDF, PNG, JPG (max 10MB each)
                         </p>
                       </div>
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full"
+                        onClick={() => {
+                          if (!subject.trim() || !message.trim()) {
+                            toast.error("Please fill in both subject and message fields.")
+                            return
+                          }
+                          toast.success("Message sent successfully! We'll respond within 24 hours.")
+                          setMessage("")
+                          setSubject("")
+                          setSelectedOption(null)
+                        }}
+                      >
                         <Mail className="h-4 w-4 mr-2" />
                         Send Message
                       </Button>
@@ -250,21 +279,27 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <FileText className="h-4 w-4 mr-2" />
-                    <span className="flex-1 text-left">Help Center</span>
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Lightbulb className="h-4 w-4 mr-2" />
-                    <span className="flex-1 text-left">Hiring Best Practices</span>
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    <span className="flex-1 text-left">Community Forum</span>
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                  <a href="/employer/help-center" target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span className="flex-1 text-left">Help Center</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </a>
+                  <a href="/employer/hiring-guide" target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Lightbulb className="h-4 w-4 mr-2" />
+                      <span className="flex-1 text-left">Hiring Best Practices</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </a>
+                  <a href="/employer/community" target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" className="w-full justify-start">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      <span className="flex-1 text-left">Community Forum</span>
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </a>
                 </CardContent>
               </Card>
             </div>

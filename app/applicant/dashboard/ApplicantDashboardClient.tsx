@@ -11,6 +11,11 @@ import { format } from "date-fns"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ApplicantProfileForm } from "@/components/applicant/ApplicantProfileForm"
+import { ResumeBuilder } from "@/components/applicant/ResumeBuilder"
+import { InterviewPrepSystem } from "@/components/applicant/InterviewPrepSystem"
+import { ApplicationAnalyticsDashboard } from "@/components/applicant/ApplicationAnalyticsDashboard"
+import { JobAlertsManager } from "@/components/applicant/JobAlertsManager"
+import { CareerResourcesHub } from "@/components/applicant/CareerResourcesHub"
 
 interface Application {
   id: string
@@ -84,14 +89,34 @@ export default function ApplicantDashboardClient({ userName, userEmail }: Applic
 
   return (
     <Tabs defaultValue={defaultTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-2 max-w-md">
+      <TabsList className="grid w-full grid-cols-7 lg:max-w-5xl">
         <TabsTrigger value="applications" className="flex items-center gap-2">
           <Briefcase className="h-4 w-4" />
-          Applications
+          <span className="hidden sm:inline">Applications</span>
         </TabsTrigger>
         <TabsTrigger value="profile" className="flex items-center gap-2">
           <UserCircle className="h-4 w-4" />
-          Job Fit Profile
+          <span className="hidden sm:inline">Profile</span>
+        </TabsTrigger>
+        <TabsTrigger value="resume" className="flex items-center gap-2">
+          📄
+          <span className="hidden sm:inline">Resume</span>
+        </TabsTrigger>
+        <TabsTrigger value="interview" className="flex items-center gap-2">
+          🎥
+          <span className="hidden sm:inline">Interview</span>
+        </TabsTrigger>
+        <TabsTrigger value="analytics" className="flex items-center gap-2">
+          📊
+          <span className="hidden sm:inline">Analytics</span>
+        </TabsTrigger>
+        <TabsTrigger value="alerts" className="flex items-center gap-2">
+          🔔
+          <span className="hidden sm:inline">Alerts</span>
+        </TabsTrigger>
+        <TabsTrigger value="resources" className="flex items-center gap-2">
+          📚
+          <span className="hidden sm:inline">Resources</span>
         </TabsTrigger>
       </TabsList>
 
@@ -189,6 +214,26 @@ export default function ApplicantDashboardClient({ userName, userEmail }: Applic
             <ApplicantProfileForm />
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="resume" className="space-y-4">
+        <ResumeBuilder />
+      </TabsContent>
+
+      <TabsContent value="interview" className="space-y-4">
+        <InterviewPrepSystem />
+      </TabsContent>
+
+      <TabsContent value="analytics" className="space-y-4">
+        <ApplicationAnalyticsDashboard />
+      </TabsContent>
+
+      <TabsContent value="alerts" className="space-y-4">
+        <JobAlertsManager />
+      </TabsContent>
+
+      <TabsContent value="resources" className="space-y-4">
+        <CareerResourcesHub />
       </TabsContent>
     </Tabs>
   )

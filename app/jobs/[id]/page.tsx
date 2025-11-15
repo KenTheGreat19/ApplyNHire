@@ -8,6 +8,7 @@ import { PublicComments } from "@/components/PublicComments"
 import { EmployerPublicReviews } from "@/components/EmployerPublicReviews"
 import { JobFitGradingWidget } from "@/components/JobFitGradingWidget"
 import { ViewTracker } from "@/components/ViewTracker"
+import JoobleAdDisplay from "@/components/JoobleAdDisplay"
 import { formatDistanceToNow } from "date-fns"
 import { formatSalary } from "@/lib/utils"
 
@@ -259,6 +260,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 )}
               </CardContent>
             </Card>
+
+            {/* Jooble Job Advertisements */}
+            <JoobleAdDisplay limit={3} random={true} />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { EmployerSidebar } from "@/components/employer/EmployerSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -161,9 +162,9 @@ export default function SubscriptionsPage() {
                 </select>
               </div>
               <div className="flex gap-4 text-sm">
-                <a href="#" className="text-blue-600 hover:underline">Frequently Asked Questions</a>
-                <a href="#" className="text-blue-600 hover:underline">About</a>
-                <a href="#" className="text-blue-600 hover:underline">Contact Indeed</a>
+                <Link href="/faq" className="text-blue-600 hover:underline">Frequently Asked Questions</Link>
+                <Link href="/about" className="text-blue-600 hover:underline">About ApplyNHire</Link>
+                <Link href="/contact" className="text-blue-600 hover:underline">Contact our team</Link>
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-4">

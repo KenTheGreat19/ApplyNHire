@@ -76,6 +76,15 @@ model User {
   subscriptions       Subscription[]
   jobLikes            JobLike[]
   applicantProfile    ApplicantProfile?
+  
+  // New enhanced features relations
+  jobAlerts           JobAlert[]
+  resumes             Resume[]
+  coverLetters        CoverLetter[]
+  interviewPreps      InterviewPrep[]
+  jobComparisons      JobComparison[]
+  applicationStats    ApplicationStats?
+  skillsGapAnalyses   SkillsGapAnalysis[]
 
   @@index([email])
   @@index([role])
@@ -171,6 +180,7 @@ model Application {
   job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   applicant           User     @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   reviews             Review[]
+  notes               ApplicationNote[]
 
   @@unique([jobId, applicantId])
   @@index([applicantId])
@@ -635,3 +645,314 @@ model JobFitScore {
   @@index([jobId])
   @@index([applicantId])
 }
+
+// ========================================
+// NEW APPLICANT ENHANCEMENT FEATURES
+// ========================================
+
+// Job Alerts System
+model JobAlert {
+  id                  String   @id @default(cuid())
+  userId              String
+  title               String?  // Keyword search
+  location            String?
+  jobType             String?  // full_time, part_time, etc.
+  category            String?
+  minSalary           Int?
+  experienceLevel     String?
+  isActive            Boolean  @default(true)
+  frequency           String   @default("instant") // instant, daily, weekly
+  lastSent            DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([frequency])
+}
+
+// Resume Builder
+model Resume {
+  id                  String   @id @default(cuid())
+  userId              String
+  title               String   @default("My Resume")
+  templateStyle       String   @default("professional") // professional, modern, creative
+  
+  // Personal Info
+  fullName            String?
+  email               String?
+  phone               String?
+  location            String?
+  website             String?
+  linkedin            String?
+  github              String?
+  
+  // Professional Summary
+  summary             String?
+  
+  // Work Experience (JSON array)
+  workExperience      String?  // [{ company, title, startDate, endDate, description, achievements }]
+  
+  // Education (JSON array)
+  education           String?  // [{ school, degree, field, startDate, endDate, gpa, honors }]
+  
+  // Skills (JSON array)
+  skills              String?  // [{ name, proficiency }]
+  
+  // Certifications (JSON array)
+  certifications      String?  // [{ name, issuer, date, expiryDate, credentialId }]
+  
+  // Projects (JSON array)
+  projects            String?  // [{ name, description, technologies, url, startDate, endDate }]
+  
+  // Languages (JSON array)
+  languages           String?  // [{ name, proficiency }]
+  
+  // References
+  references          String?  // [{ name, title, company, email, phone, relationship }]
+  
+  // ATS Score
+  atsScore            Int      @default(0)
+  lastScoreCheck      DateTime?
+  
+  isDefault           Boolean  @default(false)
+  isPdf               Boolean  @default(false)
+  pdfUrl              String?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+}
+
+// Cover Letter Templates
+model CoverLetter {
+  id                  String   @id @default(cuid())
+  userId              String
+  jobId               String?
+  title               String   @default("Cover Letter")
+  content             String   // Full letter content
+  
+  // Template variables
+  companyName         String?
+  hiringManager       String?
+  position            String?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([jobId])
+}
+
+// Interview Preparation
+model InterviewPrep {
+  id                  String   @id @default(cuid())
+  userId              String
+  jobId               String?
+  companyName         String?
+  position            String?
+  interviewDate       DateTime?
+  interviewType       String?  // phone, video, onsite, technical
+  
+  // Preparation Notes
+  companyResearch     String?
+  questionsToAsk      String?  // JSON array
+  answersPrepped      String?  // JSON array of Q&A
+  
+  // Practice Sessions
+  practiceCount       Int      @default(0)
+  lastPracticed       DateTime?
+  
+  status              String   @default("preparing") // preparing, scheduled, completed, cancelled
+  outcome             String?  // passed, rejected, waiting
+  notes               String?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  practiceSessions    InterviewPracticeSession[]
+
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
+}
+
+// Interview Practice Sessions
+model InterviewPracticeSession {
+  id                  String   @id @default(cuid())
+  interviewPrepId     String
+  questionAsked       String
+  userAnswer          String?
+  confidence          Int?     // 1-5 rating
+  duration            Int?     // seconds
+  recordingUrl        String?
+  
+  createdAt           DateTime @default(now())
+
+  interviewPrep       InterviewPrep @relation(fields: [interviewPrepId], references: [id], onDelete: Cascade)
+
+  @@index([interviewPrepId])
+}
+
+// Application Notes & Follow-ups
+model ApplicationNote {
+  id                  String   @id @default(cuid())
+  applicationId       String
+  noteType            String   @default("general") // general, follow_up, interview, offer, rejection
+  content             String
+  reminderDate        DateTime?
+  isCompleted         Boolean  @default(false)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  application         Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([reminderDate])
+  @@index([isCompleted])
+}
+
+// Career Resources & Articles
+model CareerResource {
+  id                  String   @id @default(cuid())
+  title               String
+  category            String   // resume_tips, interview_prep, salary_negotiation, career_advice
+  content             String
+  author              String?
+  readTime            Int?     // minutes
+  tags                String?  // JSON array
+  isPublished         Boolean  @default(true)
+  viewCount           Int      @default(0)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+}
+
+// Job Comparisons
+model JobComparison {
+  id                  String   @id @default(cuid())
+  userId              String
+  name                String   @default("Comparison")
+  jobIds              String   // JSON array of job IDs
+  notes               String?
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Application Analytics
+model ApplicationStats {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  
+  // Application Metrics
+  totalApplications   Int      @default(0)
+  pendingApplications Int      @default(0)
+  rejectedApplications Int     @default(0)
+  acceptedApplications Int     @default(0)
+  
+  // Response Metrics
+  averageResponseTime Float    @default(0) // days
+  interviewRate       Float    @default(0) // percentage
+  offerRate           Float    @default(0) // percentage
+  
+  // Activity Metrics
+  weeklyApplications  Int      @default(0)
+  monthlyApplications Int      @default(0)
+  lastApplicationDate DateTime?
+  
+  // Success Metrics
+  bestCategory        String?
+  bestJobType         String?
+  bestLocation        String?
+  
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Skills Gap Analysis
+model SkillsGapAnalysis {
+  id                  String   @id @default(cuid())
+  userId              String
+  jobId               String
+  
+  // Gap Analysis
+  missingSkills       String?  // JSON array
+  weakSkills          String?  // JSON array (skills user has but needs improvement)
+  matchingSkills      String?  // JSON array
+  
+  // Recommendations
+  coursesRecommended  String?  // JSON array
+  certificationsRecommended String?  // JSON array
+  booksRecommended    String?  // JSON array
+  
+  improvementPlan     String?  // Text plan
+  estimatedTimeToReady Int?    // weeks
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([jobId])
+}
+
+// Jooble Job Advertisement - External job postings fetched from Jooble API
+model JoobleJobAd {
+  id                  String   @id @default(cuid())
+  
+  // Job details from Jooble
+  joobleId            String?  @unique // Jooble's unique ID if provided
+  title               String
+  description         String
+  location            String
+  companyName         String
+  applyUrl            String   // Link to apply on Jooble/external site
+  
+  // Additional metadata
+  salary              String?
+  type                String?  // full-time, part-time, etc.
+  snippet             String?  // Short preview text
+  source              String?  // Source website
+  
+  // Admin approval workflow
+  status              String   @default("pending") // "pending", "approved", "rejected"
+  reviewedBy          String?  // Admin who reviewed
+  reviewedAt          DateTime?
+  rejectionReason     String?
+  
+  // Display metrics
+  impressionsCount    Int      @default(0)
+  clicksCount         Int      @default(0)
+  
+  // Fetched/imported metadata
+  fetchedAt           DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([fetchedAt])
+}
+

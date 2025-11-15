@@ -34,8 +34,8 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <Image src="/logo.png" alt="apply n hire logo" width={44} height={44} />
-          <span className="text-[1.25rem] font-bold text-[#0A66C2] hover:opacity-80 transition-opacity">
-            {t("header.logo")}
+          <span className="text-[1.25rem] font-bold text-[#0A66C2] hover:opacity-80 transition-opacity" suppressHydrationWarning>
+            {mounted ? t("header.logo") : "apply n hire"}
           </span>
         </Link>
 
