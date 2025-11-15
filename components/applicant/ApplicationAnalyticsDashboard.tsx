@@ -150,7 +150,7 @@ export function ApplicationAnalyticsDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <Progress value={(stats.pendingApplications / stats.totalApplications) * 100} className="w-32 h-2" />
-                <Badge variant="outline">{stats.pendingApplications}</Badge>
+                <Badge variant="secondary">{stats.pendingApplications}</Badge>
               </div>
             </div>
 
@@ -161,7 +161,7 @@ export function ApplicationAnalyticsDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <Progress value={(stats.acceptedApplications / stats.totalApplications) * 100} className="w-32 h-2" />
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                   {stats.acceptedApplications}
                 </Badge>
               </div>
@@ -174,7 +174,7 @@ export function ApplicationAnalyticsDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <Progress value={(stats.rejectedApplications / stats.totalApplications) * 100} className="w-32 h-2" />
-                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
                   {stats.rejectedApplications}
                 </Badge>
               </div>
