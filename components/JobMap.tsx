@@ -123,7 +123,7 @@ function extractCity(location: string): string {
 // Component to handle map updates - can't use useMap directly with dynamic import
 // So we'll control the map through state and MapContainer props instead
 
-export function JobMap({ jobs, onJobClick, height = 600 }: JobMapProps) {
+export function JobMap({ jobs, onJobClick, height: _height = 600 }: JobMapProps) {
   const [jobLocations, setJobLocations] = useState<JobLocation[]>([])
   const [filteredLocations, setFilteredLocations] = useState<JobLocation[]>([])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
