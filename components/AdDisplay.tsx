@@ -40,10 +40,10 @@ export function AdDisplay({ position = "sidebar" }: AdDisplayProps) {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <p className="text-sm md:text-base font-medium">
-              ✨ Sign up or log in for an <strong>ad-free experience</strong> and exclusive features!
+              ✨ Sign up or log in for a <strong>popunder ad-free experience</strong> and exclusive features!
             </p>
             <Link
-              href="/auth/applicant"
+              href="/get-started"
               className="hidden md:inline-block bg-white text-[#0A66C2] px-4 py-1.5 rounded-md font-semibold hover:bg-gray-100 transition-colors text-sm"
             >
               Get Started Free

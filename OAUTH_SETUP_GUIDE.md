@@ -1,10 +1,10 @@
 # OAuth Setup Guide
 
-This guide will help you configure Google, Yahoo, and Outlook (Microsoft Azure AD) OAuth authentication for ApplyNHire.
+This guide will help you configure Google, Yahoo, and Outlook (Microsoft Azure AD) OAuth authentication for apply n hire.
 
 ## Prerequisites
 
-- A deployed or local instance of ApplyNHire
+- A deployed or local instance of apply n hire
 - Access to the respective developer consoles
 
 ## 1. Google OAuth Setup
@@ -20,7 +20,7 @@ This guide will help you configure Google, Yahoo, and Outlook (Microsoft Azure A
 1. Click **OAuth consent screen** in the left sidebar
 2. Select **External** user type and click **Create**
 3. Fill in the required information:
-   - App name: **ApplyNHire**
+   - App name: **apply n hire**
    - User support email: Your email
    - Developer contact email: Your email
 4. Add scopes: `email`, `profile`, `openid`
@@ -31,7 +31,7 @@ This guide will help you configure Google, Yahoo, and Outlook (Microsoft Azure A
 
 1. Go to **Credentials** > **Create Credentials** > **OAuth client ID**
 2. Application type: **Web application**
-3. Name: **ApplyNHire Web Client**
+3. Name: **apply n hire Web Client**
 4. Authorized JavaScript origins:
    - `http://localhost:3000` (for development)
    - `https://yourdomain.com` (for production)
@@ -58,7 +58,7 @@ GOOGLE_CLIENT_SECRET="your-client-secret-here"
 2. Navigate to **Azure Active Directory** > **App registrations**
 3. Click **New registration**
 4. Fill in the details:
-   - Name: **ApplyNHire**
+   - Name: **apply n hire**
    - Supported account types: **Accounts in any organizational directory and personal Microsoft accounts**
    - Redirect URI: 
      - Platform: **Web**
@@ -104,7 +104,7 @@ AZURE_AD_TENANT_ID="common"
 1. Go to [Yahoo Developer Network](https://developer.yahoo.com/)
 2. Click **My Apps** > **Create an App**
 3. Fill in the application details:
-   - Application Name: **ApplyNHire**
+   - Application Name: **apply n hire**
    - Application Type: **Web Application**
    - Description: Job board platform
    - Home Page URL: `http://localhost:3000` or `https://yourdomain.com`

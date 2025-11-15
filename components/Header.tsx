@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Menu, X, Moon, Sun, LogOut, LayoutDashboard, Globe } from "lucide-react"
+import { Menu, X, Moon, Sun, LogOut, LayoutDashboard } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -32,11 +32,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link 
-          href="/" 
-          className="text-[1.75rem] font-bold text-[#0A66C2] hover:opacity-80 transition-opacity"
-        >
-          ApplyNHire
+        <Link href="/" className="flex items-center gap-3">
+          <Image src="/logo.png" alt="apply n hire logo" width={44} height={44} />
+          <span className="text-[1.25rem] font-bold text-[#0A66C2] hover:opacity-80 transition-opacity">
+            apply n hire
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -55,7 +55,6 @@ export function Header() {
                   height={24}
                   className="rounded-full"
                 />
-                <Globe className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 max-h-96 overflow-y-auto">
@@ -184,7 +183,6 @@ export function Header() {
                   height={24}
                   className="rounded-full"
                 />
-                <Globe className="h-5 w-5" />
                 <span>{currentLanguage.name}</span>
               </button>
             </DropdownMenuTrigger>

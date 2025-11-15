@@ -1,4 +1,4 @@
-# ApplyNHire - Free Job Portal Platform
+# apply n hire - Free Job Portal Platform
 
 A modern, open-source job portal built with **Next.js 14**, **React**, **TypeScript**, **Prisma**, and **Tailwind CSS**. Deploy to production in minutes with zero cost.
 
@@ -184,17 +184,17 @@ git push origin main
 
 ```bash
 # Build Docker image
-docker build -t applynhire .
+docker build -t apply-n-hire .
 
 # Run container
-docker run -p 3000:3000 -e DATABASE_URL=... applynhire
+docker run -p 3000:3000 -e DATABASE_URL=... apply-n-hire
 ```
 
 ### Required Environment Variables
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/applynhire
+DATABASE_URL=postgresql://user:password@localhost:5432/apply_n_hire
 
 # Authentication
 NEXTAUTH_SECRET=<generate: openssl rand -base64 32>
@@ -320,4 +320,4 @@ Contributions are welcome! Please:
 
 ---
 
-**© 2025 ApplyNHire — Open Source Job Portal — 100% Free Forever**
+**© 2025 apply n hire — Open Source Job Portal — 100% Free Forever**

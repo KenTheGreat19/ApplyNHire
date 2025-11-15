@@ -128,7 +128,7 @@ export default function EmployerDashboardClient({ user }: EmployerDashboardClien
           {/* Header */}
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-              Welcome back, {user.email}!
+              Welcome back, {user.name || user.email}!
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               {companyName} • Manage your job postings

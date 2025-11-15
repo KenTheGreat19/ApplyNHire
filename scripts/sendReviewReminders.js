@@ -62,7 +62,7 @@ async function main() {
       <p>It's been 30 days since you were hired for <strong>${app.job.title}</strong>. Your feedback helps keep our community fair and transparent.</p>
       <p>Please take a minute to rate your employer and share how the experience went.</p>
       <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/applications/${app.id}">Leave a review</a></p>
-      <p>Thanks — the ApplyNHire team</p>
+      <p>Thanks — the apply n hire team</p>
     `
 
     try {

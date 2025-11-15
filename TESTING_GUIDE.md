@@ -1,4 +1,4 @@
-# Testing Guide for ApplyNHire
+# Testing Guide for apply n hire
 
 ## Quick Start Testing
 

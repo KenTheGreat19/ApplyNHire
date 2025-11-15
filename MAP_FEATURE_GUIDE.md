@@ -1,7 +1,7 @@
 # Job Location Map Feature
 
 ## Overview
-The ApplyNHire platform now includes an interactive world map that helps users find jobs near their location. This feature uses OpenStreetMap and the Leaflet library to display job locations with distance calculations.
+The apply n hire platform now includes an interactive world map that helps users find jobs near their location. This feature uses OpenStreetMap and the Leaflet library to display job locations with distance calculations.
 
 ## Features
 

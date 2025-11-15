@@ -1,7 +1,7 @@
 # OAuth and Policy Pages Implementation Summary
 
 ## Overview
-Successfully implemented OAuth authentication (Google, Yahoo, Outlook) and created dedicated policy pages for ApplyNHire.
+Successfully implemented OAuth authentication (Google, Yahoo, Outlook) and created dedicated policy pages for apply n hire.
 
 ## ✅ Completed Features
 
@@ -133,7 +133,7 @@ Updated with:
 ## File Structure
 
 ```
-ApplyNHire/
+apply n hire/
 ├── app/
 │   ├── auth/
 │   │   ├── applicant/

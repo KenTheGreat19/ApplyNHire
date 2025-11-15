@@ -167,7 +167,7 @@ async function verifyJobs() {
 
 async function main() {
   console.log('\n' + '='.repeat(60))
-  console.log('  ApplyNHire - System Verification')
+  console.log('  apply n hire - System Verification')
   console.log('='.repeat(60) + '\n')
 
   const checks = [

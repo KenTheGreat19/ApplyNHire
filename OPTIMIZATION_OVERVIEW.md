@@ -1,4 +1,4 @@
-# 📊 ApplyNHire Optimization Overview
+# 📊 apply n hire Optimization Overview
 
 ## 🎯 Project Cleanup Status: ✅ 100% COMPLETE
 
@@ -272,7 +272,7 @@ npx prisma seed     # Populate test data
 vercel deploy
 
 # Docker
-docker build -t applynhire .
+docker build -t apply-n-hire .
 
 # Self-hosted
 npm run build && npm start
@@ -322,10 +322,10 @@ STATUS: 🟢 PRODUCTION READY
 
 ---
 
-**Your ApplyNHire project is now cleaner, faster, and better than ever!**
+**Your apply n hire project is now cleaner, faster, and better than ever!**
 
 **Next step: Deploy with confidence! 🚀**
 
 ---
 
-**© 2025 ApplyNHire - Optimized for Success**
+**© 2025 apply n hire - Optimized for Success**

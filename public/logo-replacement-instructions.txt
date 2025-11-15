@@ -1,0 +1,7 @@
+Your PNG logo is installed as `public/logo.png` and is now used in the site header.
+
+Details:
+- The header now references `/logo.png` (see `components/Header.tsx`).
+- The placeholder SVG (`public/logo.svg`) has been removed.
+
+If you want the header to use a different file name or size, tell me and I will update `components/Header.tsx` accordingly.
