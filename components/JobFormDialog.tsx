@@ -125,7 +125,7 @@ export function JobFormDialog({ open, onOpenChange, job, companyName, employerTy
         title: job.title,
         company: job.company,
         clientCompanyName: (job as any).clientCompanyName || "",
-        location: job.location,
+        location: job.location || undefined,
         locationLat: (job as any).locationLat || undefined,
         locationLng: (job as any).locationLng || undefined,
         workMode: (job as any).workMode || "onsite",
@@ -310,9 +310,9 @@ export function JobFormDialog({ open, onOpenChange, job, companyName, employerTy
                 setValue("locationLng", location.lng)
               }}
               initialLocation={{
-                address: watch("location"),
-                lat: watch("locationLat"),
-                lng: watch("locationLng"),
+                address: watch("location") || undefined,
+                lat: watch("locationLat") || undefined,
+                lng: watch("locationLng") || undefined,
               }}
             />
             

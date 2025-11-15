@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma"
 import { JobCard } from "@/components/JobCard"
 import { useLanguage } from "@/contexts/LanguageContext"
 
-function JobListClient({ jobs, sponsoredCount }: { jobs: any[], sponsoredCount: number }) {
+function JobListClient({ jobs }: { jobs: any[] }) {
   const { t } = useLanguage()
 
   return (
@@ -107,7 +107,7 @@ export async function JobList({ searchParams }: JobListProps) {
       )
     }
 
-    return <JobListClient jobs={rankedJobs} sponsoredCount={0} />
+    return <JobListClient jobs={rankedJobs} />
   } catch (error) {
     console.error("Error loading jobs:", error)
     return (
