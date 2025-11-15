@@ -26,7 +26,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { Loader2, MapPin } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import dynamic from "next/dynamic"
 
 // Dynamically import Location Picker (no API key needed, uses OpenStreetMap)
